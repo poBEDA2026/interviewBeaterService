@@ -1,0 +1,28 @@
+-- /Ждем схему БД/
+--
+--Что писать в файле миграции
+--
+--Все, что меняет схему базы:
+--CREATE TABLE, ALTER TABLE, CREATE INDEX, DROP,
+--а также справочные данные (INSERT фикстур — например, сид ~50 вопросов из дизайн-документа).
+--
+--Пример:
+--CREATE TABLE users (
+--    id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+--    email       VARCHAR(255) NOT NULL,
+--    password    VARCHAR(255) NOT NULL,
+--    role        VARCHAR(20)  NOT NULL DEFAULT 'USER',
+--    created_at  TIMESTAMP    NOT NULL DEFAULT now(),
+--    CONSTRAINT uq_users_email UNIQUE (email)
+--);
+--
+--CREATE TABLE questions (
+--    id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+--    title       VARCHAR(500) NOT NULL,
+--    answer      TEXT,
+--    category    VARCHAR(50)  NOT NULL,
+--    difficulty  VARCHAR(10)  NOT NULL,
+--    author_id   BIGINT,
+--    created_at  TIMESTAMP    NOT NULL DEFAULT now(),
+--    CONSTRAINT fk_questions_author FOREIGN KEY (author_id) REFERENCES users (id)
+--);
