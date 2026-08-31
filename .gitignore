@@ -16,3 +16,8 @@ target/
 
 ### Mac OS ###
 .DS_Store
+
+### Environment & Secrets ###
+.env
+.env.local
+.env.*.local
