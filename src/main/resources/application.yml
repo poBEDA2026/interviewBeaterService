@@ -3,10 +3,27 @@ spring:
     name: interview-beater-service
   lifecycle:
     timeout-per-shutdown-phase: 30s   # сколько ждать незавершенные запросы (максимум)
+  info:
+    env:
+      enabled: true
+    build:
+      enabled: true
 
 server:
   port: 8080
   shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  health:
+    defaults:
+      enabled: true
 
   datasource:
     url: jdbc:postgresql://localhost:5433/interviewBeaterService
@@ -29,3 +46,12 @@ logging:
   level:
     com.github.interviewbeaterservice: DEBUG
     org.hibernate.SQL: DEBUG
+
+info:
+  app:
+    name: ${spring.application.name}
+    description: Interview Beater Service - REST API for interview preparation
+    version: 0.0.1-SNAPSHOT
+    java: ${java.version}
+  developer:
+    name: InterviewBeater Team
