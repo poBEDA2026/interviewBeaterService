@@ -1,0 +1,1672 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Схема базы данных - InterviewBeater Service</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f7fa;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+            border-bottom: 4px solid #3498db;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        h2 {
+            color: #34495e;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            border-left: 5px solid #3498db;
+            padding-left: 15px;
+        }
+
+        h3 {
+            color: #555;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .metadata {
+            background: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .metadata-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .metadata-label {
+            font-weight: bold;
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+
+        .metadata-value {
+            color: #2c3e50;
+            font-size: 1.1em;
+        }
+
+        .diagram-container {
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 30px 0;
+            overflow-x: auto;
+        }
+
+        .module-section {
+            margin: 40px 0;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 5px solid #3498db;
+        }
+
+        .module-title {
+            font-size: 1.5em;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .module-icon {
+            width: 40px;
+            height: 40px;
+            background: #3498db;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-weight: bold;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        th {
+            background: #34495e;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .pk {
+            background: #e74c3c;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .fk {
+            background: #f39c12;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .unique {
+            background: #27ae60;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .index {
+            background: #9b59b6;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .field-type {
+            color: #8e44ad;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .field-required {
+            color: #e74c3c;
+            font-size: 0.85em;
+        }
+
+        .field-nullable {
+            color: #95a5a6;
+            font-size: 0.85em;
+        }
+
+        .relationship {
+            display: inline-block;
+            padding: 5px 10px;
+            margin: 5px;
+            background: #e8f4f8;
+            border-radius: 4px;
+            font-size: 0.9em;
+            border-left: 3px solid #3498db;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+            .container {
+                box-shadow: none;
+                padding: 20px;
+            }
+            .diagram-container {
+                page-break-inside: avoid;
+            }
+            .module-section {
+                page-break-inside: avoid;
+            }
+        }
+
+        .print-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: background 0.3s;
+        }
+
+        .print-button:hover {
+            background: #2980b9;
+        }
+
+        @media print {
+            .print-button {
+                display: none;
+            }
+        }
+
+        .table-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .table-card h4 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .table-description {
+            color: #7f8c8d;
+            margin-bottom: 15px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <button class="print-button" onclick="window.print()">📄 Сохранить как PDF</button>
+
+    <div class="container">
+        <h1>🗄️ Схема базы данных InterviewBeater Service</h1>
+
+        <div class="metadata">
+            <div class="metadata-item">
+                <span class="metadata-label">Версия</span>
+                <span class="metadata-value">1.0</span>
+            </div>
+            <div class="metadata-item">
+                <span class="metadata-label">Дата</span>
+                <span class="metadata-value">2026-09-01</span>
+            </div>
+            <div class="metadata-item">
+                <span class="metadata-label">СУБД</span>
+                <span class="metadata-value">PostgreSQL 17</span>
+            </div>
+            <div class="metadata-item">
+                <span class="metadata-label">Всего таблиц</span>
+                <span class="metadata-value">9</span>
+            </div>
+            <div class="metadata-item">
+                <span class="metadata-label">Миграция</span>
+                <span class="metadata-value">V1__init.sql</span>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">9</div>
+                <div class="stat-label">Основных таблиц</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">5</div>
+                <div class="stat-label">Категорий вопросов</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">15</div>
+                <div class="stat-label">Тегов для фильтрации</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">7</div>
+                <div class="stat-label">Примеров вопросов</div>
+            </div>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: #e74c3c;"></div>
+                <span>Primary Key (PK)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #f39c12;"></div>
+                <span>Foreign Key (FK)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #27ae60;"></div>
+                <span>Unique (UQ)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #9b59b6;"></div>
+                <span>Index (IDX)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #34495e;"></div>
+                <span>Check Constraint</span>
+            </div>
+        </div>
+
+        <h2>📊 Общая ER-диаграмма базы данных</h2>
+
+        <div class="diagram-container">
+            <pre class="mermaid">
+erDiagram
+    USERS ||--o{ REFRESH_TOKENS : "has"
+    USERS ||--o{ REVIEW_SCHEDULES : "owns"
+    USERS ||--o{ QUESTIONS : "authors"
+    USERS ||--o{ USER_STATISTICS : "has"
+    USERS ||--o{ CATEGORY_STATISTICS : "tracks"
+    USERS ||--o{ DAILY_STATISTICS : "logs"
+
+    USERS ||--o{ REVIEW_HISTORY : "records"
+    QUESTIONS ||--o{ REVIEW_SCHEDULES : "scheduled for"
+    QUESTIONS ||--o{ REVIEW_HISTORY : "reviewed in"
+
+    CATEGORIES ||--o{ QUESTIONS : "contains"
+    CATEGORIES ||--o{ CATEGORY_STATISTICS : "tracked in"
+
+    TAGS ||--o{ QUESTION_TAGS : "linked via"
+    QUESTIONS ||--o{ QUESTION_TAGS : "tagged with"
+
+    REVIEW_SCHEDULES ||--o{ REVIEW_HISTORY : "generates"
+    REVIEW_SCHEDULES ||--o{ USER_STATISTICS : "updates via events"
+    REVIEW_SCHEDULES ||--o{ CATEGORY_STATISTICS : "updates via events"
+    REVIEW_SCHEDULES ||--o{ DAILY_STATISTICS : "updates via events"
+
+    USERS {
+        bigint id PK
+        varchar email UK
+        varchar password_hash
+        varchar role
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    REFRESH_TOKENS {
+        bigint id PK
+        bigint user_id FK
+        varchar token UK
+        timestamp expires_at
+        timestamp created_at
+        timestamp revoked_at
+    }
+
+    CATEGORIES {
+        bigint id PK
+        varchar name UK
+        text description
+        int display_order
+        timestamp created_at
+    }
+
+    TAGS {
+        bigint id PK
+        varchar name UK
+        varchar color
+        timestamp created_at
+    }
+
+    QUESTIONS {
+        bigint id PK
+        varchar title
+        text answer
+        bigint category_id FK
+        varchar difficulty
+        bigint author_id FK
+        boolean is_public
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    QUESTION_TAGS {
+        bigint question_id FK,PK
+        bigint tag_id FK,PK
+    }
+
+    REVIEW_SCHEDULES {
+        bigint id PK
+        bigint user_id FK
+        bigint question_id FK
+        int interval_days
+        decimal easiness_factor
+        int repetitions
+        timestamp next_review_date
+        timestamp last_review_date
+        varchar status
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    REVIEW_HISTORY {
+        bigint id PK
+        bigint review_schedule_id FK
+        bigint user_id FK
+        bigint question_id FK
+        int grade
+        timestamp review_date
+        int interval_before
+        int interval_after
+        decimal ef_before
+        decimal ef_after
+        int repetitions_before
+        int repetitions_after
+        int time_taken_seconds
+        timestamp created_at
+    }
+
+    USER_STATISTICS {
+        bigint id PK
+        bigint user_id FK,UK
+        int total_questions
+        int questions_due
+        int questions_mastered
+        int total_reviews
+        decimal average_grade
+        int current_streak_days
+        int longest_streak_days
+        timestamp last_review_date
+        timestamp updated_at
+    }
+
+    CATEGORY_STATISTICS {
+        bigint id PK
+        bigint user_id FK
+        bigint category_id FK
+        int questions_in_category
+        int questions_due
+        int questions_mastered
+        int total_reviews
+        decimal average_grade
+        timestamp updated_at
+    }
+
+    DAILY_STATISTICS {
+        bigint id PK
+        bigint user_id FK
+        date date
+        int reviews_completed
+        int new_questions_added
+        int questions_mastered
+        decimal average_grade
+        int time_spent_minutes
+        timestamp created_at
+    }
+            </pre>
+        </div>
+
+        <div class="module-section">
+            <div class="module-title">
+                <div class="module-icon">🔐</div>
+                <div>Модуль аутентификации и авторизации</div>
+            </div>
+
+            <div class="table-card">
+                <h4>users</h4>
+                <p class="table-description">Пользователи системы с JWT-аутентификацией</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Поле</th>
+                            <th>Тип</th>
+                            <th>Ограничения</th>
+                            <th>Описание</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="pk">PK</span> id</td>
+                            <td><span class="field-type">BIGINT</span></td>
+                            <td><span class="field-required">NOT NULL</span>, AUTO INCREMENT</td>
+                            <td>Уникальный идентификатор пользователя</td>
+                        </tr>
+                        <tr>
+                            <td><span class="unique">UQ</span> email</td>
+                            <td><span class="field-type">VARCHAR(255)</span></td>
+                            <td><span class="field-required">NOT NULL</span></td>
+                            <td>Email для входа (уникальный)</td>
+                        </tr>
+                        <tr>
+                            <td>password_hash</td>
+                            <td><span class="field-type">VARCHAR(255)</span></td>
+                            <td><span class="field-required">NOT NULL</span></td>
+                            <td>BCrypt-хеш пароля</td>
+                        </tr>
+                        <tr>
+                            <td>role</td>
+                            <td><span class="field-type">VARCHAR(20)</span></td>
+                            <td><span class="field-required">NOT NULL</span>, DEFAULT 'USER'</td>
+                            <td>Роль: USER или ADMIN</td>
+                        </tr>
+                        <tr>
+                            <td>created_at</td>
+                            <td><span class="field-type">TIMESTAMP</span></td>
+                            <td><span class="field-required">NOT NULL</span>, DEFAULT now()</td>
+                            <td>Время создания аккаунта</td>
+                        </tr>
+                        <tr>
+                            <td>updated_at</td>
+                            <td><span class="field-type">TIMESTAMP</span></td>
+                            <td><span class="field-required">NOT NULL</span>, AUTO UPDATE</td>
+                            <td>Время последнего обновления</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="table-card">
+                <h4>refresh_tokens</h4>
+                <p class="table-description">Refresh-токены JWT с возможностью отзыва</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Поле</th>
+                            <th>Тип</th>
+                            <th>Ограничения</th>
+                            <th>Описание</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="pk">PK</span> id</td>
+                            <td><span class="field-type">BIGINT</span></td>
+                            <td><span class="field-required">NOT NULL</span>, AUTO INCREMENT</td>
+                            <td>Уникальный идентификатор токена</td>
+                        </tr>
+                        <tr>
+                            <td><span class="fk">FK</span> user_id</td>
+                            <td><span class="field-type">BIGINT</span></td>
+                            <td><span class="field-required">NOT NULL</span>, CASCADE DELETE</td>
+                            <td>Ссылка на пользователя</td>
+                        </tr>
+                        <tr>
+                            <td><span class="unique">UQ</span> token</td>
+                            <td><span class="field-type">VARCHAR(500)</span></td>
+                            <td><span class="field-required">NOT NULL</span></td>
+                            <td>Хеш токена</td>
+                        </tr>
+                        <tr>
+                            <td>expires_at</td>
+                            <td><span class="field-type">TIMESTAMP</span></td>
+                            <td><span class="field-required">NOT NULL</span></td>
+                            <td>Время истечения токена</td>
+                        </tr>
+                        <tr>
+                            <td>created_at</td>
+                            <td><span class="field-type">TIMESTAMP</span></td>
+                            <td><span class="field-required">NOT NULL</span>, DEFAULT now()</td>
+                            <td>Время создания токена</td>
+                        </tr>
+                        <tr>
+                            <td>revoked_at</td>
+                            <td><span class="field-type">TIMESTAMP</span></td>
+                            <td><span class="field-nullable">NULLABLE</span></td>
+                            <td>Время отзыва токена (NULL = активен)</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="relationship">
+                    <strong>Связи:</strong>
+                    <br>
+                    • users.id → refresh_tokens.user_id (CASCADE DELETE)
+                    <br>
+                    • Индекс: idx_refresh_tokens_user_expires (user_id, expires_at)
+                </div>
+            </div>
+        </div>
+
+        <div class="module-section">
+            <div class="module-title">
+                <div class="module-icon">📚</div>
+                <div>Модуль каталога вопросов</div>
+            </div>
+
+            <div class="table-card">
+                <h4>categories</h4>
+                <p class="table-description">Категории вопросов (Core Java, Spring, и т.д.)</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Поле</th>
+                            <th>Тип</th>
+                            <th>Ограничения</th>
+                            <th>Описание</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="pk">PK</span> id</td>
+                            <td><span class="field-type">BIGINT</span></td>
+                            <td><span class="field-required">NOT NULL</span>, AUTO INCREMENT</td>
+                            <td>Уникальный идентификатор категории</td>
+                        </tr>
+                        <tr>
+                            <td><span class="unique">UQ</span> name</td>
+                            <td><span class="field-type">VARCHAR(100)</span></td>
+                            <td><span class="field-required">NOT NULL</span></td>
+                            <td>Название категории (уникальное)</td>
+                        </tr>
+                        <tr>
+                            <td>description</td>
+                            <td><span class="field-type">TEXT</span></td>
+                            <td><span class="field-nullable">NULLABLE</span></td>
+                            <td>Описание категории</td>
+                        </tr>
+                        <tr>
+                            <td>display_order</td>
+                            <td><span class="field-type">INT</span></td>
+                            <td><span class="field-required">NOT NULL</span>, DEFAULT 0</td>
+                            <td>Порядок отображения</td>
+                        </tr>
+                        <tr>
+                            <td>created_at</td>
+                            <td><span class="field-type">TIMESTAMP</span></td>
+                            <td><span class="field-required">NOT NULL</span>, DEFAULT now()</td>
+                            <td>Время создания</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="table-card">
+                <h4>tags</h4>
+                <p class="table-description">Теги для гибкой категоризации вопросов</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Поле</th>
+                            <th>Тип</th>
+                            <th>Ограничения</th>
+                            <th>Описание</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="pk">PK</span> id</td>
+                            <td><span class="field-type">BIGINT</span></td>
+                            <td><span class="field-required">NOT NULL</span>, AUTO INCREMENT</td>
+                            <td>Уникальный идентификатор тега</td>
+                        </tr>
+                        <tr>
+                            <td><span class="unique">UQ</span> name</td>
+                            <td><span class="field-type">VARCHAR(50)</span></td>
+                            <td><span class="field-required">NOT NULL</span></td>
+                            <td>Название тега (уникальное)</td>
+                        </tr>
+                        <tr>
+                            <td>color</td>
+                            <td><span class="field-type">VARCHAR(7)</span></td>
+                            <td><span class="field-nullable">NULLABLE</span></td>
+                            <td>Цвет для UI (hex)</td>
+                        </tr>
+                        <tr>
+                            <td>created_at</td>
+                            <td><span class="field-type">TIMESTAMP</span></td>
+                            <td><span class="field-required">NOT NULL</span>, DEFAULT now()</td>
+                            <td>Время создания</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="table-card">
+                <h4>questions</h4>
+                <p class="table-description">Основная таблица вопросов - поддерживает общий банк и личные вопросы</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Поле</th>
+                            <th>Тип</th>
+                            <th>Ограничения</th>
+                            <th>Описание</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="pk">PK</span> id</td>
+                            <td><span class="field-type">BIGINT</span></td>
+                            <td><span class="field-required">NOT NULL</span>, AUTO INCREMENT</td>
+                            <td>Уникальный идентификатор вопроса</td>
+                        </tr>
+                        <tr>
+                            <td>title</td>
+                            <td><span class="field-type">VARCHAR(500)</span></td>
+                            <td><span class="field-required">NOT NULL</span></td>
+                            <td>Заголовок вопроса</td>
+                        </tr>
+                        <tr>
+                            <td>answer</td>
+                            <td><span class="field-type">TEXT</span></td>
+                            <td><span class="field-nullable">NULLABLE</span></td>
+                            <td>Ответ в формате Markdown</td>
+                        </tr>
+                        <tr>
+                            <td><span class="fk">FK</span> category_id</td>
+                            <td><span class="field-type">BIGINT</span></td>
+                            <td><span class="field-required">NOT NULL</span></td>
+                            <td>Ссылка на категорию</td>
+                        </tr>
+                        <tr>
+                            <td>difficulty</td>
+                            <td><span class="field-type">VARCHAR(20)</span></td>
+                            <td><span class="field-required">NOT NULL</span>, CHECK IN ('EASY','MEDIUM','HARD','EXPERT')</td>
+                            <td>Сложность вопроса</td>
+                        </tr>
+                        <tr>
+                            <td><span class="fk">FK</span> author_id</td>
+                            <td><span class="field-type">BIGINT</span></td>
+                            <td><span class="field-nullable">NULLABLE</span>, SET NULL DELETE</td>
+                            <td>Автор (NULL = общий банк)</td>
+                        </tr>
+                        <tr>
+                            <td>is_public</td>
+                            <td><span class="field-type">BOOLEAN</span></td>
+                            <td><span class="field-required">NOT NULL</span>, DEFAULT true</td>
+                            <td>Общий (true) или личный (false)</td>
+                        </tr>
+                        <tr>
+                            <td>created_at</td>
+                            <td><span class="field-type">TIMESTAMP</span></td>
+                            <td><span class="field-required">NOT NULL</span>, DEFAULT now()</td>
+                            <td>Время создания</td>
+                        </tr>
+                        <tr>
+                            <td>updated_at</td>
+                            <td><span class="field-type">TIMESTAMP</span></td>
+                            <td><span class="field-required">NOT NULL</span>, AUTO UPDATE</td>
+                            <td>Время последнего обновления</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="relationship">
+                    <strong>Связи:</strong>
+                    <br>
+                    • categories.id → questions.category_id
+                    <br>
+                    • users.id → questions.author_id (SET NULL DELETE)
+                    <br>
+                    • Индексы: idx_questions_category, idx_questions_difficulty, idx_questions_author
+                </div>
+            </div>
+
+            <div class="table-card">
+                <h4>question_tags</h4>
+                <p class="table-description">Junction-таблица для отношения многие-ко-многим</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Поле</th>
+                            <th>Тип</th>
+                            <th>Ограничения</th>
+                            <th>Описание</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="pk">PK</span> <span class="fk">FK</span> question_id</td>
+                            <td><span class="field-type">BIGINT</span></td>
+                            <td><span class="field-required">NOT NULL</span>, CASCADE DELETE</td>
+                            <td>Ссылка на вопрос</td>
+                        </tr>
+                        <tr>
+                            <td><span class="pk">PK</span> <span class="fk">FK</span> tag_id</td>
+                            <td><span class="field-type">BIGINT</span></td>
+                            <td><span class="field-required">NOT NULL</span>, CASCADE DELETE</td>
+                            <td>Ссылка на тег</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="relationship">
+                    <strong>Связи:</strong>
+                    <br>
+                    • questions.id → question_tags.question_id (CASCADE DELETE)
+                    <br>
+                    • tags.id → question_tags.tag_id (CASCADE DELETE)
+                    <br>
+                    • Индекс: idx_question_tags_tag (tag_id)
+                </div>
+            </div>
+        </div>
+
+        <div class="module-section">
+            <div class="module-title">
+                <div class="module-icon">🔄</div>
+                <div>Модуль интервального повторения (SRS)</div>
+            </div>
+
+            <div class="table-card">
+                <h4>review_schedules</h4>
+                <p class="table-description">Изменяемое состояние алгоритма SM-2 - одна запись на пару пользователь-вопрос</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Поле</th>
+                            <th>Тип</th>
+                            <th>Ограничения</th>
+                            <th>Описание</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="pk">PK</span> id</td>
+                            <td><span class="field-type">BIGINT</span></td>
+                            <td><span class="field-required">NOT NULL</span>, AUTO INCREMENT</td>
+                            <td>Уникальный идентификатор расписания</td>
+                        </tr>
+                        <tr>
+                            <td><span class="fk">FK</span> user_id</td>
+                            <td><span class="field-type">BIGINT</span></td>
+                            <td><span class="field-required">NOT NULL</span>, CASCADE DELETE</td>
+                            <td>Ссылка на пользователя</td>
+                        </tr>
+                        <tr>
+                            <td><span class="fk">FK</span> question_id</td>
+                            <td><span class="field-type">BIGINT</span></td>
+                            <td><span class="field-required">NOT NULL</span>, CASCADE DELETE</td>
+                            <td>Ссылка на вопрос</td>
+                        </tr>
+                        <tr>
+                            <td>interval_days</td>
+                            <td><span class="field-type">INT</span></td>
+                            <td><span class="field-required">NOT NULL</span>, DEFAULT 0</td>
+                            <td>Интервал до следующего повторения (дни)</td>
+                        </tr>
+                        <tr>
+                            <td>easiness_factor</td>
+                            <td><span class="field-type">DECIMAL(3,2)</span></td>
+                            <td><span class="field-required">NOT NULL</span>, DEFAULT 2.50, CHECK >= 1.30</td>
+                            <td>Коэффициент лёгкости SM-2 (EF)</td>
+                        </tr>
+                        <tr>
+                            <td>repetitions</td>
+                            <td><span class="field-type">INT</span></td>
+                            <td><span class="field-required">NOT NULL</span>, DEFAULT 0</td>
+                            <td>Количество успешных повторений</td>
+                        </tr>
+                        <tr>
+                            <td>next_review_date</td>
+                            <td><span class="field-type">TIMESTAMP</span></td>
+                            <td><span class="field-required">NOT NULL</span></td>
+                            <td>Дата следующего повторения</td>
+                        </tr>
+                        <tr>
+                            <td>last_review_date</td>
+                            <td><span class="field-type">TIMESTAMP</span></td>
+                            <td><span class="field-nullable">NULLABLE</span></td>
+                            <td>Дата последнего повторения</td>
+                        </tr>
+                        <tr>
+                            <td>status</td>
+                            <td><span class="field-type">VARCHAR(20)</span></td>
+                            <td><span class="field-required">NOT NULL</span>, CHECK IN ('ACTIVE','SUSPENDED','MASTERED')</td>
+                            <td>Статус расписания</td>
+                        </tr>
+                        <tr>
+                            <td>created_at</td>
+                            <td><span class="field-type">TIMESTAMP</span></td>
+                            <td><span class="field-required">NOT NULL</span>, DEFAULT now()</td>
+                            <td>Время создания</td>
+                        </tr>
+                        <tr>
+                            <td>updated_at</td>
+                            <td><span class="field-type">TIMESTAMP</span></td>
+                            <td><span class="field-required">NOT NULL</span>, AUTO UPDATE</td>
+                            <td>Время последнего обновления</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="relationship">
+                    <strong>Связи:</strong>
+                    <br>
+                    • users.id → review_schedules.user_id (CASCADE DELETE)
+                    <br>
+                    • questions.id → review_schedules.question_id (CASCADE DELETE)
+                    <br>
+                    • Уникальный ключ: (user_id, question_id)
+                    <br>
+                    • Индексы: idx_review_schedules_due, idx_review_schedules_user_status
+                </div>
+            </div>
+
+            <div class="table-card">
+                <h4>review_history</h4>
+                <p class="table-description">Неизменяемый журнал всех повторений - источник истины для статистики</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Поле</th>
+                            <th>Тип</th>
+                            <th>Ограничения</th>
+                            <th>Описание</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="pk">PK</span> id</td>
+                            <td><span class="field-type">BIGINT</span></td>
+                            <td><span class="field-required">NOT NULL</span>, AUTO INCREMENT</td>
+                            <td>Уникальный идентификатор записи</td>
+                        </tr>
+                        <tr>
+                            <td><span class="fk">FK</span> review_schedule_id</td>
+                            <td><span class="field-type">BIGINT</span></td>
+                            <td><span class="field-required">NOT NULL</span>, CASCADE DELETE</td>
+                            <td>Ссылка на расписание</td>
+                        </tr>
+                        <tr>
+                            <td><span class="fk">FK</span> user_id</td>
+                            <td><span class="field-type">BIGINT</span></td>
+                            <td><span class="field-required">NOT NULL</span></td>
+                            <td>Ссылка на пользователя</td>
+                        </tr>
+                        <tr>
+                            <td><span class="fk">FK</span> question_id</td>
+                            <td><span class="field-type">BIGINT</span></td>
+                            <td><span class="field-required">NOT NULL</span></td>
+                            <td>Ссылка на вопрос</td>
+                        </tr>
+                        <tr>
+                            <td>grade</td>
+                            <td><span class="field-type">INT</span></td>
+                            <td><span class="field-required">NOT NULL</span>, CHECK BETWEEN 0 AND 5</td>
+                            <td>Оценка SM-2 (0-5)</td>
+                        </tr>
+                        <tr>
+                            <td>review_date</td>
+                            <td><span class="field-type">TIMESTAMP</span></td>
+                            <td><span class="field-required">NOT NULL</span>, DEFAULT now()</td>
+                            <td>Дата повторения</td>
+                        </tr>
+                        <tr>
+                            <td>interval_before</td>
+                            <td><span class="field-type">INT</span></td>
+                            <td><span class="field-required">NOT NULL</span></td>
+                            <td>Интервал ДО повторения</td>
+                        </tr>
+                        <tr>
+                            <td>interval_after</td>
+                            <td><span class="field-type">INT</span></td>
+                            <td><span class="field-required">NOT NULL</span></td>
+                            <td>Интервал ПОСЛЕ повторения</td>
+                        </tr>
+                        <tr>
+                            <td>ef_before</td>
+                            <td><span class="field-type">DECIMAL(3,2)</span></td>
+                            <td><span class="field-required">NOT NULL</span></td>
+                            <td>EF ДО повторения</td>
+                        </tr>
+                        <tr>
+                            <td>ef_after</td>
+                            <td><span class="field-type">DECIMAL(3,2)</span></td>
+                            <td><span class="field-required">NOT NULL</span></td>
+                            <td>EF ПОСЛЕ повторения</td>
+                        </tr>
+                        <tr>
+                            <td>repetitions_before</td>
+                            <td><span class="field-type">INT</span></td>
+                            <td><span class="field-required">NOT NULL</span></td>
+                            <td>Повторения ДО</td>
+                        </tr>
+                        <tr>
+                            <td>repetitions_after</td>
+                            <td><span class="field-type">INT</span></td>
+                            <td><span class="field-required">NOT NULL</span></td>
+                            <td>Повторения ПОСЛЕ</td>
+                        </tr>
+                        <tr>
+                            <td>time_taken_seconds</td>
+                            <td><span class="field-type">INT</span></td>
+                            <td><span class="field-nullable">NULLABLE</span></td>
+                            <td>Время ответа в секундах (опционально)</td>
+                        </tr>
+                        <tr>
+                            <td>created_at</td>
+                            <td><span class="field-type">TIMESTAMP</span></td>
+                            <td><span class="field-required">NOT NULL</span>, DEFAULT now()</td>
+                            <td>Время создания записи</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="relationship">
+                    <strong>Связи:</strong>
+                    <br>
+                    • review_schedules.id → review_history.review_schedule_id (CASCADE DELETE)
+                    <br>
+                    • users.id → review_history.user_id
+                    <br>
+                    • questions.id → review_history.question_id
+                    <br>
+                    • Индексы: idx_review_history_user_date, idx_review_history_schedule, idx_review_history_question
+                </div>
+            </div>
+        </div>
+
+        <div class="module-section">
+            <div class="module-title">
+                <div class="module-icon">📊</div>
+                <div>Модуль статистики</div>
+            </div>
+
+            <div class="table-card">
+                <h4>user_statistics</h4>
+                <p class="table-description">Денормализованная статистика на уровне пользователя</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Поле</th>
+                            <th>Тип</th>
+                            <th>Ограничения</th>
+                            <th>Описание</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="pk">PK</span> id</td>
+                            <td><span class="field-type">BIGINT</span></td>
+                            <td><span class="field-required">NOT NULL</span>, AUTO INCREMENT</td>
+                            <td>Уникальный идентификатор</td>
+                        </tr>
+                        <tr>
+                            <td><span class="fk">FK</span> <span class="unique">UQ</span> user_id</td>
+                            <td><span class="field-type">BIGINT</span></td>
+                            <td><span class="field-required">NOT NULL</span>, CASCADE DELETE</td>
+                            <td>Ссылка на пользователя (уникальная)</td>
+                        </tr>
+                        <tr>
+                            <td>total_questions</td>
+                            <td><span class="field-type">INT</span></td>
+                            <td><span class="field-required">NOT NULL</span>, DEFAULT 0</td>
+                            <td>Общее количество вопросов</td>
+                        </tr>
+                        <tr>
+                            <td>questions_due</td>
+                            <td><span class="field-type">INT</span></td>
+                            <td><span class="field-required">NOT NULL</span>, DEFAULT 0</td>
+                            <td>Вопросов к повторению</td>
+                        </tr>
+                        <tr>
+                            <td>questions_mastered</td>
+                            <td><span class="field-type">INT</span></td>
+                            <td><span class="field-required">NOT NULL</span>, DEFAULT 0</td>
+                            <td>Вопросов освоено</td>
+                        </tr>
+                        <tr>
+                            <td>total_reviews</td>
+                            <td><span class="field-type">INT</span></td>
+                            <td><span class="field-required">NOT NULL</span>, DEFAULT 0</td>
+                            <td>Общее количество повторений</td>
+                        </tr>
+                        <tr>
+                            <td>average_grade</td>
+                            <td><span class="field-type">DECIMAL(3,2)</span></td>
+                            <td><span class="field-nullable">NULLABLE</span></td>
+                            <td>Средняя оценка</td>
+                        </tr>
+                        <tr>
+                            <td>current_streak_days</td>
+                            <td><span class="field-type">INT</span></td>
+                            <td><span class="field-required">NOT NULL</span>, DEFAULT 0</td>
+                            <td>Текущая серия (дни)</td>
+                        </tr>
+                        <tr>
+                            <td>longest_streak_days</td>
+                            <td><span class="field-type">INT</span></td>
+                            <td><span class="field-required">NOT NULL</span>, DEFAULT 0</td>
+                            <td>Самая длинная серия</td>
+                        </tr>
+                        <tr>
+                            <td>last_review_date</td>
+                            <td><span class="field-type">TIMESTAMP</span></td>
+                            <td><span class="field-nullable">NULLABLE</span></td>
+                            <td>Дата последнего повторения</td>
+                        </tr>
+                        <tr>
+                            <td>updated_at</td>
+                            <td><span class="field-type">TIMESTAMP</span></td>
+                            <td><span class="field-required">NOT NULL</span>, AUTO UPDATE</td>
+                            <td>Время последнего обновления</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="relationship">
+                    <strong>Связи:</strong>
+                    <br>
+                    • users.id → user_statistics.user_id (CASCADE DELETE)
+                    <br>
+                    • Обновляется через доменные события QuestionReviewedEvent
+                </div>
+            </div>
+
+            <div class="table-card">
+                <h4>category_statistics</h4>
+                <p class="table-description">Статистика по категориям для каждого пользователя</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Поле</th>
+                            <th>Тип</th>
+                            <th>Ограничения</th>
+                            <th>Описание</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="pk">PK</span> id</td>
+                            <td><span class="field-type">BIGINT</span></td>
+                            <td><span class="field-required">NOT NULL</span>, AUTO INCREMENT</td>
+                            <td>Уникальный идентификатор</td>
+                        </tr>
+                        <tr>
+                            <td><span class="fk">FK</span> user_id</td>
+                            <td><span class="field-type">BIGINT</span></td>
+                            <td><span class="field-required">NOT NULL</span>, CASCADE DELETE</td>
+                            <td>Ссылка на пользователя</td>
+                        </tr>
+                        <tr>
+                            <td><span class="fk">FK</span> category_id</td>
+                            <td><span class="field-type">BIGINT</span></td>
+                            <td><span class="field-required">NOT NULL</span></td>
+                            <td>Ссылка на категорию</td>
+                        </tr>
+                        <tr>
+                            <td>questions_in_category</td>
+                            <td><span class="field-type">INT</span></td>
+                            <td><span class="field-required">NOT NULL</span>, DEFAULT 0</td>
+                            <td>Вопросов в категории</td>
+                        </tr>
+                        <tr>
+                            <td>questions_due</td>
+                            <td><span class="field-type">INT</span></td>
+                            <td><span class="field-required">NOT NULL</span>, DEFAULT 0</td>
+                            <td>Вопросов к повторению</td>
+                        </tr>
+                        <tr>
+                            <td>questions_mastered</td>
+                            <td><span class="field-type">INT</span></td>
+                            <td><span class="field-required">NOT NULL</span>, DEFAULT 0</td>
+                            <td>Вопросов освоено</td>
+                        </tr>
+                        <tr>
+                            <td>total_reviews</td>
+                            <td><span class="field-type">INT</span></td>
+                            <td><span class="field-required">NOT NULL</span>, DEFAULT 0</td>
+                            <td>Общее количество повторений</td>
+                        </tr>
+                        <tr>
+                            <td>average_grade</td>
+                            <td><span class="field-type">DECIMAL(3,2)</span></td>
+                            <td><span class="field-nullable">NULLABLE</span></td>
+                            <td>Средняя оценка</td>
+                        </tr>
+                        <tr>
+                            <td>updated_at</td>
+                            <td><span class="field-type">TIMESTAMP</span></td>
+                            <td><span class="field-required">NOT NULL</span>, AUTO UPDATE</td>
+                            <td>Время последнего обновления</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="relationship">
+                    <strong>Связи:</strong>
+                    <br>
+                    • users.id → category_statistics.user_id (CASCADE DELETE)
+                    <br>
+                    • categories.id → category_statistics.category_id
+                    <br>
+                    • Уникальный ключ: (user_id, category_id)
+                </div>
+            </div>
+
+            <div class="table-card">
+                <h4>daily_statistics</h4>
+                <p class="table-description">Ежедневная статистика для отслеживания серий и графиков активности</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Поле</th>
+                            <th>Тип</th>
+                            <th>Ограничения</th>
+                            <th>Описание</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="pk">PK</span> id</td>
+                            <td><span class="field-type">BIGINT</span></td>
+                            <td><span class="field-required">NOT NULL</span>, AUTO INCREMENT</td>
+                            <td>Уникальный идентификатор</td>
+                        </tr>
+                        <tr>
+                            <td><span class="fk">FK</span> user_id</td>
+                            <td><span class="field-type">BIGINT</span></td>
+                            <td><span class="field-required">NOT NULL</span>, CASCADE DELETE</td>
+                            <td>Ссылка на пользователя</td>
+                        </tr>
+                        <tr>
+                            <td>date</td>
+                            <td><span class="field-type">DATE</span></td>
+                            <td><span class="field-required">NOT NULL</span></td>
+                            <td>Дата записи</td>
+                        </tr>
+                        <tr>
+                            <td>reviews_completed</td>
+                            <td><span class="field-type">INT</span></td>
+                            <td><span class="field-required">NOT NULL</span>, DEFAULT 0</td>
+                            <td>Завершённых повторений</td>
+                        </tr>
+                        <tr>
+                            <td>new_questions_added</td>
+                            <td><span class="field-type">INT</span></td>
+                            <td><span class="field-required">NOT NULL</span>, DEFAULT 0</td>
+                            <td>Добавлено новых вопросов</td>
+                        </tr>
+                        <tr>
+                            <td>questions_mastered</td>
+                            <td><span class="field-type">INT</span></td>
+                            <td><span class="field-required">NOT NULL</span>, DEFAULT 0</td>
+                            <td>Освоено вопросов</td>
+                        </tr>
+                        <tr>
+                            <td>average_grade</td>
+                            <td><span class="field-type">DECIMAL(3,2)</span></td>
+                            <td><span class="field-nullable">NULLABLE</span></td>
+                            <td>Средняя оценка</td>
+                        </tr>
+                        <tr>
+                            <td>time_spent_minutes</td>
+                            <td><span class="field-type">INT</span></td>
+                            <td><span class="field-required">NOT NULL</span>, DEFAULT 0</td>
+                            <td>Время в минутах</td>
+                        </tr>
+                        <tr>
+                            <td>created_at</td>
+                            <td><span class="field-type">TIMESTAMP</span></td>
+                            <td><span class="field-required">NOT NULL</span>, DEFAULT now()</td>
+                            <td>Время создания записи</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="relationship">
+                    <strong>Связи:</strong>
+                    <br>
+                    • users.id → daily_statistics.user_id (CASCADE DELETE)
+                    <br>
+                    • Уникальный ключ: (user_id, date)
+                    <br>
+                    • Индекс: idx_daily_statistics_user_date (user_id, date DESC)
+                </div>
+            </div>
+        </div>
+
+        <h2>🔗 Ключевые индексы</h2>
+
+        <div class="table-card">
+            <h4>Частичные индексы (Partial Indexes)</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Индекс</th>
+                        <th>Таблица</th>
+                        <th>Условие</th>
+                        <th>Назначение</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>idx_questions_author</td>
+                        <td>questions</td>
+                        <td>WHERE author_id IS NOT NULL</td>
+                        <td>Личные вопросы пользователей</td>
+                    </tr>
+                    <tr>
+                        <td>idx_review_schedules_due</td>
+                        <td>review_schedules</td>
+                        <td>WHERE status = 'ACTIVE'</td>
+                        <td>Активные вопросы к повторению</td>
+                    </tr>
+                    <tr>
+                        <td>idx_questions_public</td>
+                        <td>questions</td>
+                        <td>WHERE is_public = true</td>
+                        <td>Общий банк вопросов</td>
+                    </tr>
+                    <tr>
+                        <td>idx_refresh_tokens_revoked</td>
+                        <td>refresh_tokens</td>
+                        <td>WHERE revoked_at IS NULL</td>
+                        <td>Активные токены</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-card">
+            <h4>Составные индексы (Composite Indexes)</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Индекс</th>
+                        <th>Таблица</th>
+                        <th>Колонки</th>
+                        <th>Поддерживаемые запросы</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>idx_questions_category_difficulty</td>
+                        <td>questions</td>
+                        <td>(category_id, difficulty, is_public)</td>
+                        <td>Фильтр по категории и сложности</td>
+                    </tr>
+                    <tr>
+                        <td>idx_review_schedules_user_due</td>
+                        <td>review_schedules</td>
+                        <td>(user_id, next_review_date)</td>
+                        <td>Вопросы пользователя к повторению</td>
+                    </tr>
+                    <tr>
+                        <td>idx_review_schedules_user_status</td>
+                        <td>review_schedules</td>
+                        <td>(user_id, status)</td>
+                        <td>Вопросы пользователя по статусу</td>
+                    </tr>
+                    <tr>
+                        <td>idx_refresh_tokens_user_expires</td>
+                        <td>refresh_tokens</td>
+                        <td>(user_id, expires_at)</td>
+                        <td>Очистка истёкших токенов</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2>🎯 CHECK Constraints</h2>
+
+        <div class="table-card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Ограничение</th>
+                        <th>Таблица</th>
+                        <th>Условие</th>
+                        <th>Защита от</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>chk_questions_difficulty</td>
+                        <td>questions</td>
+                        <td>difficulty IN ('EASY','MEDIUM','HARD','EXPERT')</td>
+                        <td>Некорректной сложности</td>
+                    </tr>
+                    <tr>
+                        <td>chk_review_schedules_status</td>
+                        <td>review_schedules</td>
+                        <td>status IN ('ACTIVE','SUSPENDED','MASTERED')</td>
+                        <td>Некорректного статуса</td>
+                    </tr>
+                    <tr>
+                        <td>chk_review_schedules_easiness</td>
+                        <td>review_schedules</td>
+                        <td>easiness_factor >= 1.30</td>
+                        <td>EF меньше минимума SM-2</td>
+                    </tr>
+                    <tr>
+                        <td>chk_review_history_grade</td>
+                        <td>review_history</td>
+                        <td>grade BETWEEN 0 AND 5</td>
+                        <td>Оценки вне диапазона SM-2</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2>🔄 Триггеры</h2>
+
+        <div class="table-card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Триггер</th>
+                        <th>Таблица</th>
+                        <th>Событие</th>
+                        <th>Функция</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>trg_users_updated_at</td>
+                        <td>users</td>
+                        <td>BEFORE UPDATE</td>
+                        <td>update_updated_at_column()</td>
+                    </tr>
+                    <tr>
+                        <td>trg_questions_updated_at</td>
+                        <td>questions</td>
+                        <td>BEFORE UPDATE</td>
+                        <td>update_updated_at_column()</td>
+                    </tr>
+                    <tr>
+                        <td>trg_review_schedules_updated_at</td>
+                        <td>review_schedules</td>
+                        <td>BEFORE UPDATE</td>
+                        <td>update_updated_at_column()</td>
+                    </tr>
+                    <tr>
+                        <td>trg_user_statistics_updated_at</td>
+                        <td>user_statistics</td>
+                        <td>BEFORE UPDATE</td>
+                        <td>update_updated_at_column()</td>
+                    </tr>
+                    <tr>
+                        <td>trg_category_statistics_updated_at</td>
+                        <td>category_statistics</td>
+                        <td>BEFORE UPDATE</td>
+                        <td>update_updated_at_column()</td>
+                    </tr>
+                </tbody>
+            </table>
+            <p style="margin-top: 15px; color: #7f8c8d; font-style: italic;">
+                Функция update_updated_at_column() автоматически устанавливает updated_at = CURRENT_TIMESTAMP при каждом UPDATE.
+            </p>
+        </div>
+
+        <h2>📦 Начальные данные (Seed Data)</h2>
+
+        <div class="stats-grid">
+            <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="stat-number">5</div>
+                <div class="stat-label">Категорий</div>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <div class="stat-number">15</div>
+                <div class="stat-label">Тегов</div>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <div class="stat-number">7</div>
+                <div class="stat-label">Примеров вопросов</div>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                <div class="stat-number">1</div>
+                <div class="stat-label">Администратор</div>
+            </div>
+        </div>
+
+        <div class="table-card">
+            <h4>Примеры вопросов</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Категория</th>
+                        <th>Вопрос</th>
+                        <th>Сложность</th>
+                        <th>Теги</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Core Java</td>
+                        <td>What is the difference between ArrayList and LinkedList?</td>
+                        <td>MEDIUM</td>
+                        <td>collections, design-patterns</td>
+                    </tr>
+                    <tr>
+                        <td>Core Java</td>
+                        <td>Explain the Java Stream API and lazy evaluation</td>
+                        <td>MEDIUM</td>
+                        <td>streams, collections</td>
+                    </tr>
+                    <tr>
+                        <td>Core Java</td>
+                        <td>How does ConcurrentHashMap work?</td>
+                        <td>HARD</td>
+                        <td>concurrency, performance</td>
+                    </tr>
+                    <tr>
+                        <td>Spring Framework</td>
+                        <td>Explain Spring Bean scopes</td>
+                        <td>MEDIUM</td>
+                        <td>spring-boot</td>
+                    </tr>
+                    <tr>
+                        <td>Spring Framework</td>
+                        <td>What is the difference between @Component, @Service, @Repository?</td>
+                        <td>EASY</td>
+                        <td>spring-mvc, spring-data</td>
+                    </tr>
+                    <tr>
+                        <td>Databases & SQL</td>
+                        <td>Explain ACID properties in database transactions</td>
+                        <td>MEDIUM</td>
+                        <td>sql, transactions</td>
+                    </tr>
+                    <tr>
+                        <td>Databases & SQL</td>
+                        <td>What is an N+1 query problem?</td>
+                        <td>MEDIUM</td>
+                        <td>sql, jpa, performance</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="module-section" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-left: none;">
+            <div class="module-title" style="color: white;">
+                <div class="module-icon" style="background: white; color: #667eea;">💡</div>
+                <div>Ключевые моменты для собеседования</div>
+            </div>
+
+            <h3 style="color: white; margin-top: 20px;">🏗️ Архитектура</h3>
+            <ul style="margin-left: 20px; line-height: 1.8;">
+                <li><strong>CQRS паттерн:</strong> Изменяемое состояние + неизменяемый журнал</li>
+                <li><strong>Доменные события:</strong> Статистика обновляется асинхронно</li>
+                <li><strong>Готовность к микросервисам:</strong> Spring Events → Kafka путь эволюции</li>
+            </ul>
+
+            <h3 style="color: white; margin-top: 20px;">⚡ Производительность</h3>
+            <ul style="margin-left: 20px; line-height: 1.8;">
+                <li><strong>Частичные индексы:</strong> Индексируем только релевантные строки</li>
+                <li><strong>Денормализованная статистика:</strong> Предварительно вычисленные агрегаты</li>
+                <li><strong>Составные индексы:</strong> Соответствие паттернам запросов</li>
+            </ul>
+
+            <h3 style="color: white; margin-top: 20px;">🔒 Безопасность</h3>
+            <ul style="margin-left: 20px; line-height: 1.8;">
+                <li><strong>Каскады внешних ключей:</strong> Кодирование бизнес-правил</li>
+                <li><strong>Refresh-токены JWT:</strong> Поддержка базой данных для отзыва</li>
+                <li><strong>Ограничения целостности:</strong> CHECK constraints и внешние ключи</li>
+            </ul>
+
+            <h3 style="color: white; margin-top: 20px;">✅ Целостность данных</h3>
+            <ul style="margin-left: 20px; line-height: 1.8;">
+                <li><strong>Строковые enum'ы:</strong> CHECK-ограничения для безопасности</li>
+                <li><strong>Триггеры:</strong> Автоматическое обновление временных меток</li>
+                <li><strong>Ссылочная целостность:</strong> Внешние ключи на всех отношениях</li>
+            </ul>
+
+            <h3 style="color: white; margin-top: 20px;">🔮 Будущее-устойчивость</h3>
+            <ul style="margin-left: 20px; line-height: 1.8;">
+                <li><strong>Гибкость алгоритма:</strong> Журнал истории позволяет A/B-тестирование</li>
+                <li><strong>Мультиарендность:</strong> Общие vs личные вопросы</li>
+                <li><strong>Наблюдаемость:</strong> Полный журнал аудита в review_history</li>
+            </ul>
+        </div>
+
+        <div style="margin-top: 40px; padding: 20px; background: #f8f9fa; border-radius: 8px; text-align: center; color: #7f8c8d;">
+            <p style="margin-bottom: 10px;">
+                <strong>InterviewBeater Service</strong> — Схема базы данных V1.0
+            </p>
+            <p style="font-size: 0.9em;">
+                Дата создания: 2026-09-01 | СУБД: PostgreSQL 17 | Миграция: V1__init.sql
+            </p>
+            <p style="font-size: 0.85em; margin-top: 10px;">
+                Каждое решение служит двум целям: работающая функция сегодня + обсуждение на собеседовании завтра
+            </p>
+        </div>
+    </div>
+
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            themeVariables: {
+                primaryColor: '#667eea',
+                primaryTextColor: '#fff',
+                primaryBorderColor: '#764ba2',
+                lineColor: '#f093fb',
+                secondaryColor: '#43e97b',
+                tertiaryColor: '#f8f9fa',
+                fontSize: '14px'
+            },
+            erDiagram: {
+                useMaxWidth: false
+            }
+        });
+    </script>
+</body>
+</html>
