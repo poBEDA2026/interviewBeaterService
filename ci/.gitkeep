@@ -1,0 +1,2 @@
+# This file ensures the ci/ directory is tracked by git
+# even if it becomes empty in the future.
