@@ -21,7 +21,7 @@ CREATE TABLE users (
 
 CREATE TABLE questions (
     id              BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    title            VARCHAR(500) NOT NULL,
+    title           VARCHAR(500) NOT NULL,
     created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -29,6 +29,7 @@ CREATE TABLE questions (
 CREATE TABLE answers (
     id              BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     text            VARCHAR(500) NOT NULL,
+    description     VARCHAR(1000),
     question_id     BIGINT NOT NULL,
     is_correct      BOOLEAN NOT NULL,
     CONSTRAINT fk_answers_question FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
