@@ -55,3 +55,7 @@ info:
     java: ${java.version}
   developer:
     name: InterviewBeater Team
+
+jwt:
+  secret: some-secret-some-secret-some-secret
+  ttl: PT1H # Время жизни токена - 1 час

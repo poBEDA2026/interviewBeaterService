@@ -12,14 +12,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 
 @RestController
-@RequestMapping("/user")
+@RequestMapping("/auth")
 @RequiredArgsConstructor
 public class UserController {
 
     private final UserService userService;
 
-    @PostMapping("/register")
-    public String register(@RequestBody @Valid RegisterRequest requestBody) {
+    @PostMapping("/signup")
+    public String signup(@RequestBody @Valid RegisterRequest requestBody) {
         User createdUser = userService.register(requestBody.email(), requestBody.password());
 
         return createdUser.getId().toString();
