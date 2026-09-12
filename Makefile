@@ -16,8 +16,12 @@ help:
 	@echo "  make test           - Run tests in Docker"
 	@echo "  make build-local    - Build JAR locally (without Docker)"
 
-# Build Docker images
+# Build Docker images (uses cached layers when possible — fast on repeat builds)
 build:
+	docker-compose -f ci/docker-compose.yml build
+
+# Force a full rebuild with no layer cache (use after dependency or Dockerfile changes)
+rebuild:
 	docker-compose -f ci/docker-compose.yml build --no-cache
 
 # Start all services
