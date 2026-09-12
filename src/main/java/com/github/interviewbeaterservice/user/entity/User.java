@@ -6,7 +6,8 @@ import lombok.*;
 import java.time.Instant;
 
 @Entity
-@Getter @Setter
+@Getter
+@Setter
 @NoArgsConstructor
 @EqualsAndHashCode(of = "id")
 @ToString(of = {"id", "email"})
@@ -17,11 +18,7 @@ public class User {
     User(String email, String password) {
         this.email = email;
         this.password = password;
-        this.role = "USER";
-
-        Instant now = Instant.now();
-        this.createdAt = now;
-        this.updatedAt = now;
+        this.role = Role.USER;
     }
 
     @Id
@@ -29,16 +26,17 @@ public class User {
     @Setter(AccessLevel.NONE)
     private Long id;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false, unique = true, length = 255)
     private String email;
 
-    @Column(nullable = false, length = 255)
+    @Column(name = "password_hash", nullable = false, length = 255)
     private String password;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private String role;
+    private Role role;
 
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
     @Column(name = "updated_at", nullable = false)
@@ -47,9 +45,7 @@ public class User {
     @PrePersist
     private void onCreate() {
         Instant now = Instant.now();
-
         if (createdAt == null) createdAt = now;
-
         if (updatedAt == null) updatedAt = now;
     }
 
