@@ -65,12 +65,23 @@ services:
       LOG_LEVEL_WEB: ${LOG_LEVEL_WEB:-INFO}
       LOG_LEVEL_SECURITY: ${LOG_LEVEL_SECURITY:-INFO}
       LOG_LEVEL_SQL: ${LOG_LEVEL_SQL:-INFO}
+      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT:-http://minio:9000}
+      STORAGE_REGION: ${STORAGE_REGION:-us-east-1}
+      STORAGE_BUCKET: ${STORAGE_BUCKET:-interview-attachments}
+      STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY:-minioadmin}
+      STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY:-minioadmin}
+      STORAGE_MAX_FILE_SIZE: ${STORAGE_MAX_FILE_SIZE:-20971520}
+      STORAGE_MAX_FILES: ${STORAGE_MAX_FILES:-10}
+      STORAGE_ALLOWED_TYPES: ${STORAGE_ALLOWED_TYPES:-image/png,image/jpeg,image/webp,application/pdf,text/plain}
+      STORAGE_PRESIGNED_TTL: ${STORAGE_PRESIGNED_TTL:-PT15M}
     ports:
       - "${APP_PORT:-8080}:8080"
     depends_on:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      minio:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
@@ -81,9 +92,46 @@ services:
     networks:
       - interviewbeater-network
 
+  # MinIO — S3-совместимое хранилище для вложений
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: interviewbeater-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    ports:
+      - "${MINIO_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - interviewbeater-network
+
+  # One-shot init: создаёт бакет, если его ещё нет.
+  # S3BucketInitializer в коде тоже создаёт бакет идемпотентно — это резерв.
+  minio-init:
+    image: quay.io/minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "mc alias set local http://minio:9000 minioadmin minioadmin
+                  && (mc mb --ignore-existing local/interview-attachments)
+                  && exit 0"
+    networks:
+      - interviewbeater-network
+
 # volumes:
 #   postgres_data:
 #     driver: local
+volumes:
+  minio_data:
 
 networks:
   interviewbeater-network:
