@@ -23,6 +23,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+/**
+ * Сервис вложений вопроса: валидация загрузки, размещение файлов в S3-хранилище,
+ * метаданные в БД, выдача pre-signed URL и удаление.
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -36,6 +40,17 @@ public class QuestionAttachmentService {
     private final StorageService storageService;
     private final StorageProperties properties;
 
+    /**
+     * Загрузить файлы как вложения вопроса. Каждый файл проверяется
+     * (количество, размер, Content-Type), кладётся в хранилище,
+     * метаданные сохраняются в БД.
+     *
+     * @param questionId ID вопроса
+     * @param files      список multipart-файлов (1..maxFilesPerUpload)
+     * @return метаданные созданных вложений
+     * @throws QuestionNotFoundException  если вопрос не найден
+     * @throws InvalidAttachmentException если файлы не прошли валидацию
+     */
     @Transactional
     public List<AttachmentResponse> upload(Long questionId, List<MultipartFile> files) {
         validateFiles(files);
@@ -77,6 +92,13 @@ public class QuestionAttachmentService {
         }).toList();
     }
 
+    /**
+     * Список вложений вопроса.
+     *
+     * @param questionId ID вопроса
+     * @return метаданные всех вложений вопроса
+     * @throws QuestionNotFoundException если вопрос не найден
+     */
     public List<AttachmentResponse> list(Long questionId) {
         if (!questionRepository.existsById(questionId)) {
             throw new QuestionNotFoundException(questionId);
@@ -86,6 +108,14 @@ public class QuestionAttachmentService {
                 .toList();
     }
 
+    /**
+     * Временный (pre-signed) URL для скачивания файла вложения из хранилища.
+     *
+     * @param questionId   ID вопроса
+     * @param attachmentId ID вложения
+     * @return подписанный URL с ограниченным временем жизни
+     * @throws AttachmentNotFoundException если вложение не найдено у этого вопроса
+     */
     public URL presignedDownloadUrl(Long questionId, Long attachmentId) {
         Attachment attachment = attachmentRepository
                 .findByQuestionIdAndId(questionId, attachmentId)
@@ -95,6 +125,13 @@ public class QuestionAttachmentService {
         return storageService.presignedGetUrl(attachment.getStorageKey(), ttl);
     }
 
+    /**
+     * Удалить вложение: сначала объект из хранилища, затем запись из БД.
+     *
+     * @param questionId   ID вопроса
+     * @param attachmentId ID вложения
+     * @throws AttachmentNotFoundException если вложение не найдено у этого вопроса
+     */
     @Transactional
     public void delete(Long questionId, Long attachmentId) {
         Attachment attachment = attachmentRepository
@@ -107,6 +144,10 @@ public class QuestionAttachmentService {
         attachmentRepository.delete(attachment);
     }
 
+    /**
+     * Проверить пакет файлов: список непустой и не превышает лимит,
+     * каждый файл непустой и не больше максимального размера.
+     */
     private void validateFiles(List<MultipartFile> files) {
         if (files == null || files.isEmpty()) {
             throw new InvalidAttachmentException("At least one file is required");
@@ -127,10 +168,19 @@ public class QuestionAttachmentService {
         }
     }
 
+    /**
+     * Привести Content-Type к нижнему регистру (null → пустая строка),
+     * чтобы сравнение с белым списком было регистронезависимым.
+     */
     private static String normalizeContentType(String contentType) {
         return contentType == null ? "" : contentType.toLowerCase();
     }
 
+    /**
+     * Сформировать storage key вида questions/{questionId}/{uuid}.{ext}.
+     * В ключ попадает только алфавитно-цифровое расширение исходного имени —
+     * защита от path traversal.
+     */
     private static String buildKey(Long questionId, String originalName) {
         String ext = "";
         if (originalName != null) {

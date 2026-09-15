@@ -18,21 +18,41 @@ import java.util.Map;
 @RestControllerAdvice
 public class ControllerAdvice {
 
+    /**
+     * Обработка отсутствующего вопроса
+     * @param e исключение {@link QuestionNotFoundException}
+     * @return тело ответа с ошибкой 404
+     */
     @ExceptionHandler(QuestionNotFoundException.class)
     public ResponseEntity<Map<String, String>> handleQuestionNotFound(QuestionNotFoundException e) {
         return body(HttpStatus.NOT_FOUND, e.getMessage());
     }
 
+    /**
+     * Обработка отсутствующего вложения
+     * @param e исключение {@link AttachmentNotFoundException}
+     * @return тело ответа с ошибкой 404
+     */
     @ExceptionHandler(AttachmentNotFoundException.class)
     public ResponseEntity<Map<String, String>> handleAttachmentNotFound(AttachmentNotFoundException e) {
         return body(HttpStatus.NOT_FOUND, e.getMessage());
     }
 
+    /**
+     * Обработка вложения, не прошедшего валидацию
+     * @param e исключение {@link InvalidAttachmentException}
+     * @return тело ответа с ошибкой 400
+     */
     @ExceptionHandler(InvalidAttachmentException.class)
     public ResponseEntity<Map<String, String>> handleInvalidAttachment(InvalidAttachmentException e) {
         return body(HttpStatus.BAD_REQUEST, e.getMessage());
     }
 
+    /**
+     * Обработка ошибок валидации полей DTO
+     * @param e исключение {@link MethodArgumentNotValidException}
+     * @return тело ответа с ошибкой 400 и списком ошибок по полям
+     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException e) {
         Map<String, Object> body = new LinkedHashMap<>();
@@ -43,6 +63,11 @@ public class ControllerAdvice {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
+    /**
+     * Обработка превышения лимита размера загрузки
+     * @param e исключение {@link MaxUploadSizeExceededException}
+     * @return тело ответа с ошибкой 413
+     */
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<Map<String, String>> handleUploadTooLarge(MaxUploadSizeExceededException e) {
         return body(HttpStatus.PAYLOAD_TOO_LARGE, "Upload is too large");
@@ -68,6 +93,12 @@ public class ControllerAdvice {
         return body(HttpStatus.CONFLICT, "Email already registered");
     }
 
+    /**
+     * Сформировать тело ошибки вида {"error": message}
+     * @param status  HTTP-статус ответа
+     * @param message текст ошибки
+     * @return готовый ответ
+     */
     private static ResponseEntity<Map<String, String>> body(HttpStatus status, String message) {
         return ResponseEntity.status(status).body(Map.of("error", message));
     }

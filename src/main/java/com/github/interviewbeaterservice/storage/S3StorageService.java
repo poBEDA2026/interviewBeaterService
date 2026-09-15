@@ -16,12 +16,19 @@ import java.time.Duration;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+/**
+ * Реализация {@link StorageService} поверх AWS SDK v2
+ * (синхронный S3Client + S3Presigner).
+ */
 class S3StorageService implements StorageService {
 
     private final StorageProperties properties;
     private final S3Client s3Client;
     private final S3Presigner s3Presigner;
 
+    /**
+     * Загрузить объект в бакет через putObject.
+     */
     @Override
     public void upload(String key, InputStream content, long size, String contentType) {
         PutObjectRequest request = PutObjectRequest.builder()
@@ -35,6 +42,9 @@ class S3StorageService implements StorageService {
         log.debug("Uploaded object '{}' to bucket '{}' ({} bytes)", key, properties.bucket(), size);
     }
 
+    /**
+     * Удалить объект из бакета через deleteObject.
+     */
     @Override
     public void delete(String key) {
         DeleteObjectRequest request = DeleteObjectRequest.builder()
@@ -46,6 +56,9 @@ class S3StorageService implements StorageService {
         log.debug("Deleted object '{}' from bucket '{}'", key, properties.bucket());
     }
 
+    /**
+     * Сгенерировать pre-signed GET URL с заданным временем жизни подписи.
+     */
     @Override
     public URL presignedGetUrl(String key, Duration ttl) {
         return s3Presigner.presignGetObject(builder -> builder

@@ -73,7 +73,7 @@ jwt:
   refreshTtl: P30D # Время жизни refresh-токена - 30 дней
 
 storage:
-  endpoint: ${STORAGE_ENDPOINT:http://localhost:9000}
+  endpoint: ${STORAGE_ENDPOINT:http://localhost:${MINIO_PORT:9000}}
   region: ${STORAGE_REGION:us-east-1}
   bucket: ${STORAGE_BUCKET:interview-attachments}
   access-key: ${STORAGE_ACCESS_KEY:minioadmin}

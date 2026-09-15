@@ -5,6 +5,9 @@ import lombok.*;
 
 import java.time.Instant;
 
+/**
+ * Вложение вопроса: метаданные файла, размещённого в S3-хранилище.
+ */
 @Entity
 @Getter @Setter
 @NoArgsConstructor
@@ -13,6 +16,9 @@ import java.time.Instant;
 @Table(name = "attachments")
 public class Attachment {
 
+    /**
+     * Конструктор для {@link Builder}: заполняет контентные поля вложения.
+     */
     @Builder
     Attachment(String storageKey, String originalName, String contentType, long sizeBytes) {
         this.storageKey = storageKey;
@@ -45,6 +51,9 @@ public class Attachment {
     @Column(name = "uploaded_at", nullable = false, updatable = false)
     private Instant uploadedAt;
 
+    /**
+     * Проставить дату загрузки перед первым сохранением, если она не задана.
+     */
     @PrePersist
     private void onCreate() {
         if (uploadedAt == null) {

@@ -23,6 +23,13 @@ public class QuestionAttachmentController {
 
     private final QuestionAttachmentService service;
 
+    /**
+     * Загрузить файлы как вложения вопроса (multipart/form-data).
+     *
+     * @param questionId ID вопроса
+     * @param files      загружаемые файлы
+     * @return метаданные созданных вложений
+     */
     @Operation(summary = "Загрузить файлы к вопросу (1..N)")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public List<AttachmentResponse> upload(
@@ -31,12 +38,25 @@ public class QuestionAttachmentController {
         return service.upload(questionId, files);
     }
 
+    /**
+     * Получить все вложения вопроса.
+     *
+     * @param questionId ID вопроса
+     * @return список вложений
+     */
     @Operation(summary = "Список вложений вопроса")
     @GetMapping
     public List<AttachmentResponse> list(@PathVariable Long questionId) {
         return service.list(questionId);
     }
 
+    /**
+     * Скачать вложение: 302-редирект на pre-signed S3 URL.
+     *
+     * @param questionId   ID вопроса
+     * @param attachmentId ID вложения
+     * @return ответ с Location на подписанный URL
+     */
     @Operation(summary = "302 redirect на pre-signed S3 URL")
     @GetMapping("/{attachmentId}")
     public ResponseEntity<Void> download(
@@ -48,6 +68,12 @@ public class QuestionAttachmentController {
                 .build();
     }
 
+    /**
+     * Удалить вложение вопроса.
+     *
+     * @param questionId   ID вопроса
+     * @param attachmentId ID вложения
+     */
     @Operation(summary = "Удалить вложение")
     @DeleteMapping("/{attachmentId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
