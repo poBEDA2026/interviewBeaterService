@@ -8,6 +8,9 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -37,6 +40,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         try {
             Long userId = jwtService.parse(token);
             AuthContext.set(userId);
+            // Кладём Authentication в SecurityContext, чтобы правила .authenticated() в SecurityConfig работали.
+            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                    userId, null, AuthorityUtils.NO_AUTHORITIES);
+            SecurityContextHolder.getContext().setAuthentication(authentication);
             filterChain.doFilter(request, response);
         } catch (ExpiredJwtException e) {
             writeError(response, "Token expired");
@@ -44,6 +51,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             writeError(response, "Invalid token");
         } finally {
             AuthContext.clear();
+            SecurityContextHolder.clearContext();
         }
     }
 

@@ -89,3 +89,15 @@ jwt:
   secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION} # 1 hour
   refresh-expiration: ${JWT_REFRESH_EXPIRATION} # 7 days
+
+# Storage (S3 / MinIO) configuration
+storage:
+  endpoint: ${STORAGE_ENDPOINT:http://minio:9000}
+  region: ${STORAGE_REGION:us-east-1}
+  bucket: ${STORAGE_BUCKET:interview-attachments}
+  access-key: ${STORAGE_ACCESS_KEY:minioadmin}
+  secret-key: ${STORAGE_SECRET_KEY:minioadmin}
+  max-file-size-bytes: ${STORAGE_MAX_FILE_SIZE:20971520}
+  max-files-per-upload: ${STORAGE_MAX_FILES:10}
+  allowed-content-types: ${STORAGE_ALLOWED_TYPES:image/png,image/jpeg,image/webp,application/pdf,text/plain}
+  presigned-url-ttl: ${STORAGE_PRESIGNED_TTL:PT15M}

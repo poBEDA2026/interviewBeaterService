@@ -42,6 +42,11 @@ management:
     enabled: true
     locations: classpath:db/migration
 
+  servlet:
+    multipart:
+      max-file-size: 25MB
+      max-request-size: 250MB
+
 logging:
   level:
     com.github.interviewbeaterservice: DEBUG
@@ -65,3 +70,14 @@ info:
 jwt:
   secret: some-secret-some-secret-some-secret
   ttl: PT1H # Время жизни токена - 1 час
+
+storage:
+  endpoint: ${STORAGE_ENDPOINT:http://localhost:9000}
+  region: ${STORAGE_REGION:us-east-1}
+  bucket: ${STORAGE_BUCKET:interview-attachments}
+  access-key: ${STORAGE_ACCESS_KEY:minioadmin}
+  secret-key: ${STORAGE_SECRET_KEY:minioadmin}
+  max-file-size-bytes: ${STORAGE_MAX_FILE_SIZE:20971520}    # 20 MiB
+  max-files-per-upload: ${STORAGE_MAX_FILES:10}
+  allowed-content-types: ${STORAGE_ALLOWED_TYPES:image/png,image/jpeg,image/webp,application/pdf,text/plain}
+  presigned-url-ttl: ${STORAGE_PRESIGNED_TTL:PT15M}

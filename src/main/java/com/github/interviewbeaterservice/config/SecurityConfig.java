@@ -29,6 +29,9 @@ public class SecurityConfig {
                             "/api/docs",
                             "/api/docs/**"
                     ).permitAll()
+                    .requestMatchers(HttpMethod.GET, "/questions/*/attachments", "/questions/*/attachments/*").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/questions/*/attachments").authenticated()
+                    .requestMatchers(HttpMethod.DELETE, "/questions/*/attachments/*").authenticated()
                     .anyRequest().permitAll()
             );
         return http.build();
