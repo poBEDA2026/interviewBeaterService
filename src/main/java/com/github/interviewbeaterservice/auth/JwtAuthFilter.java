@@ -35,7 +35,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String token = header.substring(BEARER_PREFIX.length());
         try {
-            Long userId = jwtService.parse(token);
+            Long userId = jwtService.parse(token, TokenType.ACCESS);
             AuthContext.set(userId);
             filterChain.doFilter(request, response);
         } catch (ExpiredJwtException e) {
