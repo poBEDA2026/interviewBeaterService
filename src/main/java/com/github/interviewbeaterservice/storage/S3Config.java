@@ -10,6 +10,7 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.BucketAlreadyOwnedByYouException;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
@@ -25,6 +26,10 @@ public class S3Config {
 
     private final StorageProperties properties;
 
+    /**
+     * S3-клиент с endpoint-оверрайдом (MinIO), статическими кредами
+     * и path-style доступом.
+     */
     @Bean
     public S3Client s3Client() {
         return S3Client.builder()
@@ -36,13 +41,19 @@ public class S3Config {
                 .build();
     }
 
+    /**
+     * Генератор pre-signed URL для скачивания объектов.
+     */
     @Bean
     public S3Presigner s3Presigner() {
+        // pathStyle обязателен для MinIO, иначе presigned-URL генерируется
+        // в virtual-host стиле (bucket.minio:9000) и не резолвится клиентом.
         return S3Presigner.builder()
                 .endpointOverride(URI.create(properties.endpoint()))
                 .credentialsProvider(StaticCredentialsProvider.create(
                         AwsBasicCredentials.create(properties.accessKey(), properties.secretKey())))
                 .region(Region.of(properties.region()))
+                .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build())
                 .build();
     }
 

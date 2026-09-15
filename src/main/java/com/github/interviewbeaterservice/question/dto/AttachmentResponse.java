@@ -4,6 +4,9 @@ import com.github.interviewbeaterservice.question.entity.Attachment;
 
 import java.time.Instant;
 
+/**
+ * DTO вложения вопроса в ответах API.
+ */
 public record AttachmentResponse(
         Long id,
         String originalName,
@@ -11,6 +14,12 @@ public record AttachmentResponse(
         long sizeBytes,
         Instant uploadedAt
 ) {
+    /**
+     * Собрать DTO из сущности вложения.
+     *
+     * @param a сущность вложения
+     * @return DTO с метаданными вложения
+     */
     public static AttachmentResponse from(Attachment a) {
         return new AttachmentResponse(
                 a.getId(),

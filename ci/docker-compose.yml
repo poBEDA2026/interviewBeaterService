@@ -65,7 +65,8 @@ services:
       LOG_LEVEL_WEB: ${LOG_LEVEL_WEB:-INFO}
       LOG_LEVEL_SECURITY: ${LOG_LEVEL_SECURITY:-INFO}
       LOG_LEVEL_SQL: ${LOG_LEVEL_SQL:-INFO}
-      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT:-http://minio:9000}
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY: ${LOG_LEVEL_SECURITY:-DEBUG}
+      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT:-http://minio:${MINIO_PORT:-9000}}
       STORAGE_REGION: ${STORAGE_REGION:-us-east-1}
       STORAGE_BUCKET: ${STORAGE_BUCKET:-interview-attachments}
       STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY:-minioadmin}
@@ -93,10 +94,12 @@ services:
       - interviewbeater-network
 
   # MinIO — S3-совместимое хранилище для вложений
+  # Примечание: официальный образ quay.io/minio/minio недоступен через корпоративный прокси,
+  # поэтому используется зеркало ghcr.io/coollabsio/minio (локальная разработка).
   minio:
-    image: quay.io/minio/minio:latest
+    image: ${MINIO_IMAGE:-ghcr.io/coollabsio/minio:latest}
     container_name: interviewbeater-minio
-    command: server /data --console-address ":9001"
+    command: server /data --address ":${MINIO_PORT:-9000}" --console-address ":${MINIO_CONSOLE_PORT:-9001}"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
@@ -106,7 +109,8 @@ services:
     volumes:
       - minio_data:/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      # curl отсутствует в образе ghcr.io/coollabsio/minio, поэтому проверка через mc
+      test: ["CMD-SHELL", "mc alias set local http://localhost:${MINIO_PORT:-9000} $$MINIO_ROOT_USER $$MINIO_ROOT_PASSWORD >/dev/null && mc ready local"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -115,15 +119,22 @@ services:
 
   # One-shot init: создаёт бакет, если его ещё нет.
   # S3BucketInitializer в коде тоже создаёт бакет идемпотентно — это резерв.
+  # Образ тот же, что у minio: в нём есть /bin/sh и mc, а отдельный quay.io/minio/mc
+  # недоступен через корпоративный прокси.
   minio-init:
-    image: quay.io/minio/mc:latest
+    image: ${MINIO_IMAGE:-ghcr.io/coollabsio/minio:latest}
     depends_on:
       minio:
         condition: service_healthy
-    entrypoint: >
-      /bin/sh -c "mc alias set local http://minio:9000 minioadmin minioadmin
-                  && (mc mb --ignore-existing local/interview-attachments)
-                  && exit 0"
+    # Переопределяем entrypoint образа (иначе стартует minio-сервер) на /bin/sh.
+    # Креды и бакет берём из env — те же переменные, что у minio и приложения.
+    entrypoint: []
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      STORAGE_BUCKET: ${STORAGE_BUCKET:-interview-attachments}
+      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT:-http://minio:${MINIO_PORT:-9000}}
+    command: ["/bin/sh", "-c", "mc alias set local \"$$STORAGE_ENDPOINT\" \"$$MINIO_ROOT_USER\" \"$$MINIO_ROOT_PASSWORD\" && mc mb --ignore-existing \"local/$$STORAGE_BUCKET\" && exit 0"]
     networks:
       - interviewbeater-network
 

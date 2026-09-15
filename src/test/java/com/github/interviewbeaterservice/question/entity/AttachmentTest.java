@@ -9,6 +9,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class AttachmentTest {
 
+    /**
+     * Builder заполняет контентные поля; id, uploadedAt и question остаются null.
+     */
     @Test
     void builder_setsAllContentFields() {
         Attachment a = Attachment.builder()
@@ -27,6 +30,9 @@ class AttachmentTest {
         assertThat(a.getQuestion()).isNull();
     }
 
+    /**
+     * onCreate проставляет uploadedAt, если он не задан.
+     */
     @Test
     void onCreate_setsUploadedAt() throws Exception {
         Attachment a = Attachment.builder()
@@ -39,6 +45,9 @@ class AttachmentTest {
         assertThat(a.getUploadedAt()).isBeforeOrEqualTo(Instant.now());
     }
 
+    /**
+     * onCreate не перезаписывает уже заданный uploadedAt.
+     */
     @Test
     void onCreate_doesNotOverwriteExistingUploadedAt() throws Exception {
         Instant pre = Instant.parse("2020-01-01T00:00:00Z");
@@ -52,6 +61,9 @@ class AttachmentTest {
         assertThat(a.getUploadedAt()).isEqualTo(pre);
     }
 
+    /**
+     * Вызвать приватный метод через рефлексию.
+     */
     private static void invokePrivate(Object target, String methodName) throws Exception {
         Method m = target.getClass().getDeclaredMethod(methodName);
         m.setAccessible(true);

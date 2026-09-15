@@ -45,6 +45,9 @@ class QuestionAttachmentServiceTest {
 
     QuestionAttachmentService service;
 
+    /**
+     * Инициализация моков и сервиса с тестовыми настройками хранилища.
+     */
     @BeforeEach
     void setUp() {
         properties = new StorageProperties(
@@ -62,12 +65,18 @@ class QuestionAttachmentServiceTest {
                 questionRepository, attachmentRepository, storageService, properties);
     }
 
+    /**
+     * Тестовый вопрос с заданным ID.
+     */
     private static Question question(long id) {
         Question q = new Question();
         setField(q, "id", id);
         return q;
     }
 
+    /**
+     * Тестовое вложение с заданным ID и storageKey "k".
+     */
     private static Attachment attachment(long id) {
         Attachment a = Attachment.builder()
                 .storageKey("k").originalName("n").contentType("text/plain").sizeBytes(1)
@@ -76,6 +85,9 @@ class QuestionAttachmentServiceTest {
         return a;
     }
 
+    /**
+     * Установить приватное поле через рефлексию (id недоступен для записи извне).
+     */
     private static void setField(Object target, String name, Object value) {
         try {
             Field f = target.getClass().getDeclaredField(name);
@@ -86,11 +98,18 @@ class QuestionAttachmentServiceTest {
         }
     }
 
+    /**
+     * Непустой PNG-файл размером 4 байта.
+     */
     private static MultipartFile pngFile(String name) {
         return new MockMultipartFile(
                 "files", name, "image/png", new byte[]{1, 2, 3, 4});
     }
 
+    /**
+     * Успешная загрузка: файл кладётся в S3 с ключом questions/{id}/{uuid}.png,
+     * запись сохраняется в БД, ответ содержит присвоенный ID и метаданные.
+     */
     @Test
     void upload_happyPath_savesAndUploads() {
         Question q = question(7L);
@@ -117,6 +136,9 @@ class QuestionAttachmentServiceTest {
         assertThat(keyCap.getValue()).startsWith("questions/7/").endsWith(".png");
     }
 
+    /**
+     * Пустой список файлов отклоняется ({@link InvalidAttachmentException}).
+     */
     @Test
     void upload_noFiles_throwsInvalidAttachment() {
         assertThatThrownBy(() -> service.upload(1L, List.of()))
@@ -124,6 +146,10 @@ class QuestionAttachmentServiceTest {
                 .hasMessageContaining("At least one file");
     }
 
+    /**
+     * Превышение лимита файлов в одной загрузке отклоняется
+     * до обращения к хранилищу и БД.
+     */
     @Test
     void upload_tooManyFiles_throwsInvalidAttachment() {
         List<MultipartFile> files = List.of(
@@ -141,6 +167,9 @@ class QuestionAttachmentServiceTest {
         verifyNoInteractions(attachmentRepository);
     }
 
+    /**
+     * Файл больше максимального размера отклоняется до обращения к хранилищу.
+     */
     @Test
     void upload_oversizeFile_throwsInvalidAttachment() {
         StorageProperties tight = new StorageProperties(
@@ -155,6 +184,9 @@ class QuestionAttachmentServiceTest {
         verifyNoInteractions(storageService);
     }
 
+    /**
+     * Content-Type вне белого списка отклоняется до обращения к хранилищу.
+     */
     @Test
     void upload_disallowedContentType_throwsInvalidAttachment() {
         Question q = question(1L);
@@ -169,6 +201,9 @@ class QuestionAttachmentServiceTest {
         verifyNoInteractions(storageService);
     }
 
+    /**
+     * Загрузка к несуществующему вопросу бросает {@link QuestionNotFoundException}.
+     */
     @Test
     void upload_questionNotFound_throwsQuestionNotFound() {
         when(questionRepository.findById(404L)).thenReturn(Optional.empty());
@@ -177,6 +212,9 @@ class QuestionAttachmentServiceTest {
                 .isInstanceOf(QuestionNotFoundException.class);
     }
 
+    /**
+     * Список возвращает DTO, собранные из сущностей вложений.
+     */
     @Test
     void list_returnsMappedDtos() {
         when(questionRepository.existsById(1L)).thenReturn(true);
@@ -190,6 +228,9 @@ class QuestionAttachmentServiceTest {
         assertThat(out.get(0).originalName()).isEqualTo("n");
     }
 
+    /**
+     * Список вложений несуществующего вопроса бросает {@link QuestionNotFoundException}.
+     */
     @Test
     void list_questionNotFound_throwsQuestionNotFound() {
         when(questionRepository.existsById(7L)).thenReturn(false);
@@ -197,6 +238,9 @@ class QuestionAttachmentServiceTest {
                 .isInstanceOf(QuestionNotFoundException.class);
     }
 
+    /**
+     * Pre-signed URL берётся у StorageService с ключом вложения и TTL из настроек.
+     */
     @Test
     void presignedDownloadUrl_returnsUrlFromStorage() throws Exception {
         Attachment a = attachment(11L);
@@ -210,6 +254,9 @@ class QuestionAttachmentServiceTest {
         assertThat(out).isEqualTo(expected);
     }
 
+    /**
+     * Запрос URL несуществующего вложения бросает {@link AttachmentNotFoundException}.
+     */
     @Test
     void presignedDownloadUrl_attachmentNotFound_throws() {
         when(attachmentRepository.findByQuestionIdAndId(1L, 99L))
@@ -219,6 +266,9 @@ class QuestionAttachmentServiceTest {
                 .isInstanceOf(AttachmentNotFoundException.class);
     }
 
+    /**
+     * Удаление: сначала объект из хранилища, затем запись из БД (порядок важен).
+     */
     @Test
     void delete_callsStorageThenRepo() {
         Attachment a = attachment(11L);
@@ -232,6 +282,9 @@ class QuestionAttachmentServiceTest {
         order.verify(attachmentRepository).delete(a);
     }
 
+    /**
+     * Удаление несуществующего вложения бросает исключение, хранилище не затрагивается.
+     */
     @Test
     void delete_attachmentNotFound_throws() {
         when(attachmentRepository.findByQuestionIdAndId(1L, 11L))
@@ -241,6 +294,10 @@ class QuestionAttachmentServiceTest {
         verifyNoInteractions(storageService);
     }
 
+    /**
+     * Ключ объекта строится из UUID и безопасного расширения:
+     * имя вида ../../etc/passwd не попадает в ключ.
+     */
     @Test
     void buildKey_isDefensiveAgainstPathTraversal() {
         Question q = question(1L);

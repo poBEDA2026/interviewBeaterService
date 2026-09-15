@@ -1,5 +1,6 @@
 package com.github.interviewbeaterservice.question.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -38,6 +39,9 @@ public class Question {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    // Не сериализуем в JSON: отдаётся отдельным эндпоинтом /questions/{id}/attachments,
+    // а ленивая загрузка при сериализации роняла GET /questions (no session).
+    @JsonIgnore
     @OneToMany(mappedBy = "question", fetch = FetchType.LAZY,
             cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Attachment> attachments = new ArrayList<>();
