@@ -9,6 +9,9 @@ import java.time.Duration;
 @Validated
 @ConfigurationProperties(prefix = "jwt")
 public record JwtProperties(
-        @Size(min = 32) String secret,
-        Duration ttl
-) {}
+    @Size(min = 32) String secret,
+    Duration ttl,
+    Duration refreshTtl
+) {
+
+}

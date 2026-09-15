@@ -1,14 +1,14 @@
 package com.github.interviewbeaterservice.auth;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
+import javax.security.sasl.AuthenticationException;
 import java.nio.charset.StandardCharsets;
-import java.security.Key;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
@@ -17,29 +17,78 @@ import java.util.Date;
 @RequiredArgsConstructor
 public class JwtService {
 
-    private final JwtProperties jwtProperties;
+  private final JwtProperties jwtProperties;
 
-    public String issue(Long userId) {
-        Date expiry = Date.from(Instant.now().plus(jwtProperties.ttl()));
-        return Jwts.builder()
-                .subject(userId.toString())
-                .expiration(expiry)
-                .signWith(secretKey())
-                .compact();
+  /**
+   * Вылача JWT-токена пользователю
+   *
+   * @param userId идентификатор пользователя
+   * @return JWT-токен
+   */
+  public String issueAccess(Long userId) {
+    return issue(userId, jwtProperties.ttl(), TokenType.ACCESS);
+  }
+
+  /**
+   * Вылача рефрещ-токена пользователю
+   *
+   * @param userId идентификатор пользователя
+   * @return рефрещ-токен
+   */
+  public String issueRefresh(Long userId) {
+    return issue(userId, jwtProperties.refreshTtl(), TokenType.REFRESH);
+  }
+
+  /**
+   * Считывание идентификатор пользователя из токена
+   *
+   * @param token    токен
+   * @param expected ожидаемый тип токена
+   * @return идентификатор пользователя
+   * @throws AuthenticationException
+   */
+  public Long parse(String token, TokenType expected) throws AuthenticationException {
+    Claims claims = Jwts.parser()
+        .verifyWith(secretKey())
+        .build()
+        .parseSignedClaims(token)
+        .getPayload();
+
+    String type = claims.get("typ", String.class);
+    String expectedType = expected.claim();
+
+    if (!expectedType.equals(type)) {
+      throw new AuthenticationException(
+          "Token type mismatch: expected " + expectedType + ", got " + type);
     }
 
-    public Long parse(String token) {
-        String subject = Jwts.parser()
-                .verifyWith(secretKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload()
-                .getSubject();
+    return Long.parseLong(claims.getSubject());
+  }
 
-        return Long.parseLong(subject);
-    }
+  /**
+   * Выдача токена пользователю
+   *
+   * @param userId идентификатор пользователя
+   * @param ttl    время жизни токена
+   * @param type   тип токена
+   * @return токен
+   */
+  private String issue(Long userId, Duration ttl, TokenType type) {
+    Date expiry = Date.from(Instant.now().plus(ttl));
 
-    private SecretKey secretKey() {
-        return Keys.hmacShaKeyFor(jwtProperties.secret().getBytes(StandardCharsets.UTF_8));
-    }
+    return Jwts.builder()
+        .subject(userId.toString())
+        .claim("typ", type.claim())
+        .expiration(expiry)
+        .signWith(secretKey())
+        .compact();
+  }
+
+    /**
+     * Получение ключа для подписи JWT
+     * @return ключ {@link SecretKey}
+     */
+  private SecretKey secretKey() {
+    return Keys.hmacShaKeyFor(jwtProperties.secret().getBytes(StandardCharsets.UTF_8));
+  }
 }

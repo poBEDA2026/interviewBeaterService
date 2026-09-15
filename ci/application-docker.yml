@@ -87,6 +87,8 @@ logging:
 # JWT Configuration
 jwt:
   secret: ${JWT_SECRET}
+  ttl: ${JWT_EXPIRATION} # 1 hour
+  refreshTtl: ${JWT_REFRESH_EXPIRATION} # 7 days
   expiration: ${JWT_EXPIRATION} # 1 hour
   refresh-expiration: ${JWT_REFRESH_EXPIRATION} # 7 days
 
