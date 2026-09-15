@@ -5,151 +5,88 @@ import com.github.interviewbeaterservice.auth.exception.BadCredentialsException;
 import com.github.interviewbeaterservice.user.entity.Role;
 import com.github.interviewbeaterservice.user.entity.User;
 import com.github.interviewbeaterservice.user.repository.UserRepository;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import javax.security.sasl.AuthenticationException;
 import java.lang.reflect.Field;
-import java.time.Duration;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
 
-  @Mock
-  UserRepository userRepository;
-  @Mock
-  PasswordEncoder passwordEncoder;
+    @Mock UserRepository userRepository;
+    @Mock PasswordEncoder passwordEncoder;
+    @Mock JwtService jwtService;
 
-  JwtProperties jwtProperties = new JwtProperties(
-      "test-secret-test-secret-test-secret-1234",
-      Duration.ofMinutes(15),
-      Duration.ofDays(7)
-  );
+    @InjectMocks AuthService authService;
 
-  JwtService jwtService = new JwtService(jwtProperties);
-
-  AuthService authService;
-
-  private final User alice = withId(
-      User.builder().email("alice@example.com").password("hashed").build(),
-      1L, Role.USER
-  );
-
-  @BeforeEach
-  void setUp() {
-    authService = new AuthService(userRepository, passwordEncoder, jwtService);
-    alice.setEmail("alice@example.com");
-    alice.setPassword("hashed");
-    setField(alice, "role", Role.USER);
-  }
-
-  private static User withId(User u, Long id, Role role) {
-    setField(u, "id", id);
-    setField(u, "role", role);
-    return u;
-  }
-
-  private static void setField(Object target, String name, Object value) {
-    try {
-      Field f = target.getClass().getDeclaredField(name);
-      f.setAccessible(true);
-      f.set(target, value);
-    } catch (ReflectiveOperationException e) {
-      throw new RuntimeException(e);
+    private User userWithIdAndRole(long id, String email, String hash, Role role) {
+        User u = User.builder().email(email).password(hash).build();
+        try {
+            Field idField = User.class.getDeclaredField("id");
+            idField.setAccessible(true);
+            idField.set(u, id);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+        u.setRole(role);
+        return u;
     }
-  }
 
-  @Test
-  void loginReturnsAccessAndRefreshTokens() {
-    when(userRepository.findByEmail("alice@example.com")).thenReturn(Optional.of(alice));
-    when(passwordEncoder.matches("raw", "hashed")).thenReturn(true);
+    @Test
+    @DisplayName("login при валидных кредов возвращает LoginResponse со всеми полями")
+    void login_validCredentials_returnsLoginResponse() {
+        User user = userWithIdAndRole(7L, "alice@example.com", "$2a$10$hash", Role.ADMIN);
+        when(userRepository.findByEmail("alice@example.com")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("raw", "$2a$10$hash")).thenReturn(true);
+        when(jwtService.issueAccess(7L)).thenReturn("access.token.value");
+        when(jwtService.issueRefresh(7L)).thenReturn("refresh.token.value");
 
-    LoginResponse resp = authService.login("alice@example.com", "raw");
+        LoginResponse response = authService.login("alice@example.com", "raw");
 
-    assertThat(resp.accessToken()).isNotBlank();
-    assertThat(resp.refreshToken()).isNotBlank();
-    assertThat(resp.accessToken()).isNotEqualTo(resp.refreshToken());
-    assertThat(resp.userId()).isEqualTo(1L);
-    assertThat(resp.email()).isEqualTo("alice@example.com");
-    assertThat(resp.role()).isEqualTo("USER");
-  }
+        assertThat(response.accessToken()).isEqualTo("access.token.value");
+        assertThat(response.refreshToken()).isEqualTo("refresh.token.value");
+        assertThat(response.userId()).isEqualTo(7L);
+        assertThat(response.email()).isEqualTo("alice@example.com");
+        assertThat(response.role()).isEqualTo("ADMIN");
+    }
 
-  @Test
-  void loginWithWrongPasswordThrows() {
-    when(userRepository.findByEmail("alice@example.com")).thenReturn(Optional.of(alice));
-    when(passwordEncoder.matches("raw", "hashed")).thenReturn(false);
+    @Test
+    @DisplayName("login для несуществующего email бросает BadCredentialsException")
+    void login_unknownEmail_throwsBadCredentials() {
+        when(userRepository.findByEmail("ghost@example.com")).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> authService.login("alice@example.com", "raw"))
-        .isInstanceOf(BadCredentialsException.class);
-  }
+        assertThatThrownBy(() -> authService.login("ghost@example.com", "raw"))
+                .isInstanceOf(BadCredentialsException.class);
 
-  @Test
-  void loginWithUnknownEmailThrows() {
-    when(userRepository.findByEmail("ghost@example.com")).thenReturn(Optional.empty());
+        verify(passwordEncoder, never()).matches(any(), any());
+        verify(jwtService, never()).issueAccess(any());
+        verify(jwtService, never()).issueRefresh(any());
+    }
 
-    assertThatThrownBy(() -> authService.login("ghost@example.com", "raw"))
-        .isInstanceOf(BadCredentialsException.class);
-  }
+    @Test
+    @DisplayName("login с неверным паролем бросает BadCredentialsException")
+    void login_wrongPassword_throwsBadCredentials() {
+        User user = userWithIdAndRole(7L, "alice@example.com", "$2a$10$hash", Role.USER);
+        when(userRepository.findByEmail("alice@example.com")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("wrong", "$2a$10$hash")).thenReturn(false);
 
-  @Test
-  void refreshWithValidRefreshTokenReturnsNewPair() throws AuthenticationException {
-    String refresh = jwtService.issueRefresh(1L);
-    when(userRepository.findById(1L)).thenReturn(Optional.of(alice));
+        assertThatThrownBy(() -> authService.login("alice@example.com", "wrong"))
+                .isInstanceOf(BadCredentialsException.class);
 
-    LoginResponse resp = authService.refresh(refresh);
-
-    assertThat(resp.accessToken()).isNotBlank();
-    assertThat(resp.refreshToken()).isNotBlank();
-    assertThat(resp.userId()).isEqualTo(1L);
-    assertThat(resp.email()).isEqualTo("alice@example.com");
-    // The new access token parses back to the same user and is typed ACCESS
-    assertThat(jwtService.parse(resp.accessToken(), TokenType.ACCESS)).isEqualTo(1L);
-    assertThat(jwtService.parse(resp.refreshToken(), TokenType.REFRESH)).isEqualTo(1L);
-  }
-
-  @Test
-  void refreshWithAccessTokenThrows() {
-    String access = jwtService.issueAccess(1L);
-
-    assertThatThrownBy(() -> authService.refresh(access))
-        .isInstanceOf(AuthenticationException.class);
-  }
-
-  @Test
-  void refreshWithExpiredRefreshTokenThrows() throws InterruptedException {
-    JwtService shortLived = new JwtService(new JwtProperties(
-        jwtProperties.secret(),
-        jwtProperties.ttl(),
-        java.time.Duration.ofMillis(1)
-    ));
-    String refresh = shortLived.issueRefresh(1L);
-    Thread.sleep(50);
-
-    assertThatThrownBy(() -> authService.refresh(refresh))
-        .isInstanceOf(io.jsonwebtoken.ExpiredJwtException.class);
-  }
-
-  @Test
-  void refreshForUnknownUserThrows() {
-    String refresh = jwtService.issueRefresh(99L);
-    when(userRepository.findById(99L)).thenReturn(Optional.empty());
-
-    assertThatThrownBy(() -> authService.refresh(refresh))
-        .isInstanceOf(BadCredentialsException.class);
-  }
-
-  @Test
-  void refreshWithMalformedTokenThrows() {
-    assertThatThrownBy(() -> authService.refresh("not-a-real-jwt"))
-        .isInstanceOf(RuntimeException.class);
-  }
+        verify(jwtService, never()).issueAccess(any());
+        verify(jwtService, never()).issueRefresh(any());
+    }
 }

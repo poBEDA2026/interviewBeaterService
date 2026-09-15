@@ -30,7 +30,7 @@ public class AnswerController
      * @return ответ типа {@link AnswerSubmissionResponse}
      */
     @Operation(summary = "Предоставление ответа на вопрос")
-    @PostMapping("/{questionId}")
+    @PostMapping
     public AnswerSubmissionResponse submit(@PathVariable Long questionId,
                                            @RequestBody AnswerSubmissionRequest request)
     {
