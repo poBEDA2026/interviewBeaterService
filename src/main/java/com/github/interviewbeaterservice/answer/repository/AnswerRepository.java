@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-interface AnswerRepository extends JpaRepository<Answer, Long> {
+public interface AnswerRepository extends JpaRepository<Answer, Long> {
 
     /**
      * Получить список ответов на вопрос
