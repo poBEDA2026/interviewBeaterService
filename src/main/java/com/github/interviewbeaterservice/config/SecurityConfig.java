@@ -22,7 +22,18 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+            .authorizeHttpRequests(auth -> auth
+                    .requestMatchers(
+                            "/api/swagger-ui.html",
+                            "/api/swagger-ui/**",
+                            "/api/docs",
+                            "/api/docs/**"
+                    ).permitAll()
+                    .requestMatchers(HttpMethod.GET, "/questions/*/attachments", "/questions/*/attachments/*").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/questions/*/attachments").authenticated()
+                    .requestMatchers(HttpMethod.DELETE, "/questions/*/attachments/*").authenticated()
+                    .anyRequest().permitAll()
+            );
         return http.build();
     }
 }
