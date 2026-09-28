@@ -1,8 +1,10 @@
 package com.github.interviewbeaterservice.config;
 
+import com.github.interviewbeaterservice.auth.exception.BadCredentialsException;
 import com.github.interviewbeaterservice.question.exception.AttachmentNotFoundException;
 import com.github.interviewbeaterservice.question.exception.InvalidAttachmentException;
 import com.github.interviewbeaterservice.question.exception.QuestionNotFoundException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -44,6 +46,26 @@ public class ControllerAdvice {
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<Map<String, String>> handleUploadTooLarge(MaxUploadSizeExceededException e) {
         return body(HttpStatus.PAYLOAD_TOO_LARGE, "Upload is too large");
+    }
+
+    /**
+     * Обработка логина с неверными реквизитами
+     * @param e исключение {@link BadCredentialsException}
+     * @return тело ответа с ошибкой 401
+     */
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<Map<String, String>> handleBadCredentials(BadCredentialsException e) {
+        return body(HttpStatus.UNAUTHORIZED, "Invalid email or password");
+    }
+
+    /**
+     * Обработка регистрации пользователя с уже зарегистрированной почтой
+     * @param e исключение {@link DataIntegrityViolationException}
+     * @return тело ответа с ошибкой 409
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, String>> handleDataIntegrity(DataIntegrityViolationException e) {
+        return body(HttpStatus.CONFLICT, "Email already registered");
     }
 
     private static ResponseEntity<Map<String, String>> body(HttpStatus status, String message) {

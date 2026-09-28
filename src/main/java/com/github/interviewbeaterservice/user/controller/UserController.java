@@ -1,6 +1,7 @@
 package com.github.interviewbeaterservice.user.controller;
 
 import com.github.interviewbeaterservice.user.dto.RegisterRequest;
+import com.github.interviewbeaterservice.user.dto.RegisterResponse;
 import com.github.interviewbeaterservice.user.entity.User;
 import com.github.interviewbeaterservice.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -23,9 +24,9 @@ public class UserController {
 
     @Operation(summary = "Регистрация нового пользователя, возвращает id")
     @PostMapping("/signup")
-    public String signup(@RequestBody @Valid RegisterRequest requestBody) {
+    public RegisterResponse signup(@RequestBody @Valid RegisterRequest requestBody) {
         User createdUser = userService.register(requestBody.email(), requestBody.password());
 
-        return createdUser.getId().toString();
+        return new RegisterResponse(createdUser.getId());
     }
 }
