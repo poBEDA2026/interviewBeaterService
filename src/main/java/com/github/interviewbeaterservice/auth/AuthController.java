@@ -18,12 +18,13 @@ import javax.security.sasl.AuthenticationException;
 public class AuthController {
     private final AuthService authService;
 
-    @Operation(summary = "Логин по email/паролю, возвращает JWT")
+    @Operation(summary = "Логин по email/паролю, возвращает JWT и рефреш-токен")
     @PostMapping("/login")
     public LoginResponse login(@RequestBody @Valid LoginRequest requestBody) {
         return authService.login(requestBody.email(), requestBody.password());
     }
 
+    @Operation(summary = "Обновление JWT с помощью рефреш-токена")
     @PostMapping("/refresh")
     public LoginResponse refresh(@RequestBody @Valid RefreshRequest requestBody) throws AuthenticationException {
         return authService.refresh(requestBody.refreshToken());
