@@ -69,7 +69,8 @@ info:
 
 jwt:
   secret: some-secret-some-secret-some-secret
-  ttl: PT1H # Время жизни токена - 1 час
+  ttl: PT1H # Время жизни access-токена - 1 час
+  refreshTtl: P30D # Время жизни refresh-токена - 30 дней
 
 storage:
   endpoint: ${STORAGE_ENDPOINT:http://localhost:9000}
