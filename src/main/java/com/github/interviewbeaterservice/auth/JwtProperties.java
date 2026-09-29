@@ -10,5 +10,6 @@ import java.time.Duration;
 @ConfigurationProperties(prefix = "jwt")
 public record JwtProperties(
         @Size(min = 32) String secret,
-        Duration ttl
+        Duration ttl,
+        Duration refreshTtl
 ) {}
