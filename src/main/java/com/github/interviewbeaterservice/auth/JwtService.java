@@ -4,15 +4,20 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
-import javax.security.sasl.AuthenticationException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 
+/**
+ * Выпуск и проверка JWT-токенов (access и refresh), подписанных
+ * HMAC-секретом из {@link JwtProperties}.
+ */
 @Service
 @RequiredArgsConstructor
 public class JwtService {
@@ -20,7 +25,7 @@ public class JwtService {
   private final JwtProperties jwtProperties;
 
   /**
-   * Вылача JWT-токена пользователю
+   * Выдача access-токена пользователю
    *
    * @param userId идентификатор пользователя
    * @return JWT-токен
@@ -30,22 +35,22 @@ public class JwtService {
   }
 
   /**
-   * Вылача рефрещ-токена пользователю
+   * Выдача refresh-токена пользователю
    *
    * @param userId идентификатор пользователя
-   * @return рефрещ-токен
+   * @return refresh-токен
    */
   public String issueRefresh(Long userId) {
     return issue(userId, jwtProperties.refreshTtl(), TokenType.REFRESH);
   }
 
   /**
-   * Считывание идентификатор пользователя из токена
+   * Считывание идентификатора пользователя из токена
    *
    * @param token    токен
    * @param expected ожидаемый тип токена
    * @return идентификатор пользователя
-   * @throws AuthenticationException
+   * @throws AuthenticationException, если токен просрочен, подписан другим ключом или его тип не совпадает с ожидаемым
    */
   public Long parse(String token, TokenType expected) throws AuthenticationException {
     Claims claims = Jwts.parser()
@@ -58,7 +63,7 @@ public class JwtService {
     String expectedType = expected.claim();
 
     if (!expectedType.equals(type)) {
-      throw new AuthenticationException(
+      throw new BadCredentialsException(
           "Token type mismatch: expected " + expectedType + ", got " + type);
     }
 
@@ -84,10 +89,10 @@ public class JwtService {
         .compact();
   }
 
-    /**
-     * Получение ключа для подписи JWT
-     * @return ключ {@link SecretKey}
-     */
+  /**
+   * Получение ключа для подписи JWT
+   * @return ключ {@link SecretKey}
+   */
   private SecretKey secretKey() {
     return Keys.hmacShaKeyFor(jwtProperties.secret().getBytes(StandardCharsets.UTF_8));
   }

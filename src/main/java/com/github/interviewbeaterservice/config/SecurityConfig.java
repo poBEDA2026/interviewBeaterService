@@ -1,13 +1,17 @@
 package com.github.interviewbeaterservice.config;
 
+import com.github.interviewbeaterservice.auth.*;
+
 import java.util.List;
 
-import com.github.interviewbeaterservice.auth.JwtAuthFilter;
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -19,53 +23,74 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
-@RequiredArgsConstructor
+@EnableMethodSecurity
 public class SecurityConfig {
 
-  private final JwtAuthFilter jwtAuthFilter;
+    @Bean
+    public JwtAuthFilter jwtAuthFilter(JwtService jwtService, AppUserDetailsService appUserDetailsService) {
+        return new JwtAuthFilter(jwtService, appUserDetailsService);
+    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-  @Bean
-  public CorsConfigurationSource corsConfigurationSource() {
-    CorsConfiguration cfg = new CorsConfiguration();
-    cfg.setAllowedOrigins(List.of(FrontendConstants.FRONTEND_ORIGIN));
-    cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-    cfg.setAllowedHeaders(List.of("*"));
-    cfg.setAllowCredentials(false);
-    cfg.setMaxAge(3600L);
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration cfg = new CorsConfiguration();
+        cfg.setAllowedOrigins(List.of(FrontendConstants.FRONTEND_ORIGIN));
+        cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        cfg.setAllowedHeaders(List.of("*"));
+        cfg.setAllowCredentials(false);
+        cfg.setMaxAge(3600L);
 
-    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    source.registerCorsConfiguration("/**", cfg);
-    return source;
-  }
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", cfg);
+        return source;
+    }
 
-  @Bean
-  public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-    http
-        .csrf(csrf -> csrf.disable())
-        .cors(Customizer.withDefaults())
-        .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-        .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+    @Bean
+    public AuthenticationManager authenticationManager(DaoAuthenticationProvider daoAuthenticationProvider) {
+        return new ProviderManager(daoAuthenticationProvider);
+    }
+
+    @Bean
+    public DaoAuthenticationProvider daoAuthenticationProvider(AppUserDetailsService appUserDetailsService,
+                                                               PasswordEncoder passwordEncoder) {
+        DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider(appUserDetailsService);
+        daoAuthenticationProvider.setPasswordEncoder(passwordEncoder);
+        return daoAuthenticationProvider;
+
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                                   JwtAuthFilter jwtAuthFilter,
+                                                   RestAuthenticationEntryPoint authEntryPoint,
+                                                   RestAccessDeniedHandler accessDeniedHandler) throws Exception {
+        http
+            .csrf(csrf -> csrf.disable())
+            .cors(Customizer.withDefaults())
+            .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+            .exceptionHandling(ex -> ex
+                    .authenticationEntryPoint(authEntryPoint)
+                    .accessDeniedHandler(accessDeniedHandler))
             .authorizeHttpRequests(auth -> auth
-            .requestMatchers(
-                "/api/swagger-ui.html",
-                "/api/swagger-ui/**",
-                "/api/docs",
-                "/api/docs/**"
-            ).permitAll()
-            .requestMatchers(HttpMethod.GET, "/questions/*/attachments",
-                "/questions/*/attachments/*").permitAll()
-            .requestMatchers(HttpMethod.POST, "/questions/*/attachments").authenticated()
-            .requestMatchers(HttpMethod.DELETE, "/questions/*/attachments/*").authenticated()
-            .requestMatchers(HttpMethod.GET, "/questions/*/attachments", "/questions/*/attachments/*").permitAll()
-            .requestMatchers(HttpMethod.POST, "/questions/*/attachments").authenticated()
-            .requestMatchers(HttpMethod.DELETE, "/questions/*/attachments/*").authenticated()
-            .anyRequest().permitAll()
-        );
-    return http.build();
-  }
+                    .requestMatchers(HttpMethod.POST, "/auth/login", "/auth/signup", "/auth/refresh").permitAll()
+                    .requestMatchers(
+                            "/api/swagger-ui.html",
+                            "/api/swagger-ui/**",
+                            "/api/docs",
+                            "/api/docs/**"
+                    ).permitAll()
+                    .requestMatchers("/actuator/health").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/questions/*/attachments", "/questions/*/attachments/*").authenticated()
+                    .requestMatchers(HttpMethod.POST, "/questions/*/attachments").authenticated()
+                    .requestMatchers(HttpMethod.DELETE, "/questions/*/attachments/*").authenticated()
+                    .anyRequest().authenticated()
+            );
+        return http.build();
+    }
 }

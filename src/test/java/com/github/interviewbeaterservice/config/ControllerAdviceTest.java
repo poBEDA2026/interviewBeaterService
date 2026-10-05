@@ -1,11 +1,11 @@
 package com.github.interviewbeaterservice.config;
 
-import com.github.interviewbeaterservice.auth.exception.BadCredentialsException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 
 import java.util.Map;
 
@@ -18,7 +18,7 @@ class ControllerAdviceTest {
     @Test
     @DisplayName("Возвращается 401 ошибка при логине с неверными реквизитами")
     void badCredentials_returns401() {
-        ResponseEntity<Map<String, String>> response = advice.handleBadCredentials(new BadCredentialsException());
+        ResponseEntity<Map<String, String>> response = advice.handleBadCredentials(new BadCredentialsException("Invalid email or password"));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
         assertThat(response.getBody()).containsEntry("error", "Invalid email or password");
