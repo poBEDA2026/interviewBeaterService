@@ -4,7 +4,9 @@ import com.github.interviewbeaterservice.user.entity.User;
 import com.github.interviewbeaterservice.user.repository.UserRepository;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
 
+@Service
 public class AppUserDetailsService implements UserDetailsService {
 
     public final UserRepository userRepository;

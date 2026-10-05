@@ -2,7 +2,6 @@ package com.github.interviewbeaterservice.auth;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.interviewbeaterservice.auth.dto.LoginResponse;
-import com.github.interviewbeaterservice.auth.exception.AuthExceptionHandler;
 import com.github.interviewbeaterservice.auth.exception.BadCredentialsException;
 import com.github.interviewbeaterservice.config.SecurityConfig;
 import org.junit.jupiter.api.Test;
@@ -35,11 +34,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import(SecurityConfig.class)
 class AuthControllerTest {
 
-    @Autowired MockMvc mockMvc;
-
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    @Autowired MockMvc mockMvc;
+
     @MockitoBean AuthService authService;
+    @MockitoBean AppUserDetailsService appUserDetailsService;
 
     @Test
     void postRefreshReturnsNewTokens() throws Exception {
