@@ -1,92 +1,172 @@
 package com.github.interviewbeaterservice.auth;
 
 import com.github.interviewbeaterservice.auth.dto.LoginResponse;
-import com.github.interviewbeaterservice.auth.exception.BadCredentialsException;
 import com.github.interviewbeaterservice.user.entity.Role;
 import com.github.interviewbeaterservice.user.entity.User;
-import com.github.interviewbeaterservice.user.repository.UserRepository;
-import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 
-import java.lang.reflect.Field;
-import java.util.Optional;
+import java.time.Duration;
 
+import static com.github.interviewbeaterservice.utils.TestConstants.DEFAULT_EMAIL;
+import static com.github.interviewbeaterservice.utils.TestConstants.PREFIX_ROLE;
+import static com.github.interviewbeaterservice.utils.TestConstants.ROLE_USER;
+import static com.github.interviewbeaterservice.utils.TestUtils.setField;
+import static com.github.interviewbeaterservice.utils.TestUtils.withId;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+/**
+ * Юнит-тесты {@link AuthService}: логин через AuthenticationManager
+ * и refresh по токену; {@link JwtService} реальный, менеджер и загрузчик — моки.
+ */
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
 
-    @Mock UserRepository userRepository;
-    @Mock PasswordEncoder passwordEncoder;
-    @Mock JwtService jwtService;
+    @Mock AuthenticationManager authenticationManager;
+    @Mock AppUserDetailsService appUserDetailsService;
 
-    @InjectMocks AuthService authService;
+    JwtProperties jwtProperties = new JwtProperties(
+            "test-secret-test-secret-test-secret-1234",
+            Duration.ofMinutes(15),
+            Duration.ofDays(7)
+    );
 
-    private User userWithIdAndRole(long id, String email, String hash, Role role) {
-        User u = User.builder().email(email).password(hash).build();
-        try {
-            Field idField = User.class.getDeclaredField("id");
-            idField.setAccessible(true);
-            idField.set(u, id);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
-        u.setRole(role);
-        return u;
+    JwtService jwtService = new JwtService(jwtProperties);
+
+    AuthService authService;
+
+    private final User testUser = withId(
+            User.builder().email(DEFAULT_EMAIL).password("hashed").build(),
+            1L, Role.USER
+    );
+
+    /**
+     * Собрать сервис перед каждым тестом
+     */
+    @BeforeEach
+    void setUp() {
+        authService = new AuthService(jwtService, authenticationManager, appUserDetailsService);
+        testUser.setEmail(DEFAULT_EMAIL);
+        testUser.setPassword("hashed");
+        setField(testUser, "role", Role.USER);
     }
 
-    @Test
-    @DisplayName("login при валидных кредов возвращает LoginResponse со всеми полями")
-    void login_validCredentials_returnsLoginResponse() {
-        User user = userWithIdAndRole(7L, "alice@example.com", "$2a$10$hash", Role.ADMIN);
-        when(userRepository.findByEmail("alice@example.com")).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches("raw", "$2a$10$hash")).thenReturn(true);
-        when(jwtService.issueAccess(7L)).thenReturn("access.token.value");
-        when(jwtService.issueRefresh(7L)).thenReturn("refresh.token.value");
-
-        LoginResponse response = authService.login("alice@example.com", "raw");
-
-        assertThat(response.accessToken()).isEqualTo("access.token.value");
-        assertThat(response.refreshToken()).isEqualTo("refresh.token.value");
-        assertThat(response.userId()).isEqualTo(7L);
-        assertThat(response.email()).isEqualTo("alice@example.com");
-        assertThat(response.role()).isEqualTo("ADMIN");
+    /**
+     * Успешно аутентифицированный токен с принципалом тестового пользователя
+     * @return токен, который возвращает AuthenticationManager при успешном логине
+     */
+    private Authentication authenticatedToken() {
+        return new UsernamePasswordAuthenticationToken(
+                new UserPrincipal(testUser), null, new UserPrincipal(testUser).getAuthorities());
     }
 
+    /**
+     * Логин с корректными кредами возвращает пару непустых различных токенов
+     * и данные пользователя (id, email, роль с префиксом ROLE_)
+     */
     @Test
-    @DisplayName("login для несуществующего email бросает BadCredentialsException")
-    void login_unknownEmail_throwsBadCredentials() {
-        when(userRepository.findByEmail("ghost@example.com")).thenReturn(Optional.empty());
+    void loginReturnsAccessAndRefreshTokens() {
+        when(authenticationManager.authenticate(any(Authentication.class)))
+                .thenReturn(authenticatedToken());
 
-        assertThatThrownBy(() -> authService.login("ghost@example.com", "raw"))
+        LoginResponse resp = authService.login(DEFAULT_EMAIL, "raw");
+
+        assertThat(resp.accessToken()).isNotBlank();
+        assertThat(resp.refreshToken()).isNotBlank();
+        assertThat(resp.accessToken()).isNotEqualTo(resp.refreshToken());
+        assertThat(resp.userId()).isEqualTo(1L);
+        assertThat(resp.email()).isEqualTo(DEFAULT_EMAIL);
+        assertThat(resp.role()).isEqualTo(PREFIX_ROLE + ROLE_USER);
+    }
+
+    /**
+     * Неверные креды от AuthenticationManager пробрасываются из сервиса как BadCredentialsException
+     */
+    @Test
+    void loginPropagatesBadCredentialsFromAuthenticationManager() {
+        when(authenticationManager.authenticate(any(Authentication.class)))
+                .thenThrow(new BadCredentialsException("bad creds"));
+
+        assertThatThrownBy(() -> authService.login(DEFAULT_EMAIL, "raw"))
                 .isInstanceOf(BadCredentialsException.class);
-
-        verify(passwordEncoder, never()).matches(any(), any());
-        verify(jwtService, never()).issueAccess(any());
-        verify(jwtService, never()).issueRefresh(any());
     }
 
+    /**
+     * Refresh по валидному refresh-токену возвращает новую рабочую пару токенов
+     */
     @Test
-    @DisplayName("login с неверным паролем бросает BadCredentialsException")
-    void login_wrongPassword_throwsBadCredentials() {
-        User user = userWithIdAndRole(7L, "alice@example.com", "$2a$10$hash", Role.USER);
-        when(userRepository.findByEmail("alice@example.com")).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches("wrong", "$2a$10$hash")).thenReturn(false);
+    void refreshWithValidRefreshTokenReturnsNewPair() throws AuthenticationException {
+        String refresh = jwtService.issueRefresh(1L);
+        when(appUserDetailsService.loadUserById(1L)).thenReturn(new UserPrincipal(testUser));
 
-        assertThatThrownBy(() -> authService.login("alice@example.com", "wrong"))
+        LoginResponse resp = authService.refresh(refresh);
+
+        assertThat(resp.accessToken()).isNotBlank();
+        assertThat(resp.refreshToken()).isNotBlank();
+        assertThat(resp.userId()).isEqualTo(1L);
+        assertThat(resp.email()).isEqualTo(DEFAULT_EMAIL);
+        assertThat(jwtService.parse(resp.accessToken(), TokenType.ACCESS)).isEqualTo(1L);
+        assertThat(jwtService.parse(resp.refreshToken(), TokenType.REFRESH)).isEqualTo(1L);
+    }
+
+    /**
+     * Refresh по access-токену отклоняется: тип токена не совпадает с ожидаемым
+     */
+    @Test
+    void refreshWithAccessTokenThrowsBadCredentials() {
+        String access = jwtService.issueAccess(1L);
+
+        assertThatThrownBy(() -> authService.refresh(access))
                 .isInstanceOf(BadCredentialsException.class);
+    }
 
-        verify(jwtService, never()).issueAccess(any());
-        verify(jwtService, never()).issueRefresh(any());
+    /**
+     * Refresh по просроченному refresh-токену бросает ExpiredJwtException
+     */
+    @Test
+    void refreshWithExpiredRefreshTokenThrows() throws InterruptedException {
+        JwtService shortLived = new JwtService(new JwtProperties(
+                jwtProperties.secret(),
+                jwtProperties.ttl(),
+                Duration.ofMillis(1)
+        ));
+        String refresh = shortLived.issueRefresh(1L);
+        Thread.sleep(50);
+
+        assertThatThrownBy(() -> authService.refresh(refresh))
+                .isInstanceOf(io.jsonwebtoken.ExpiredJwtException.class);
+    }
+
+    /**
+     * Refresh для неизвестного пользователя бросает BadCredentialsException
+     */
+    @Test
+    void refreshForUnknownUserThrows() {
+        String refresh = jwtService.issueRefresh(99L);
+        when(appUserDetailsService.loadUserById(99L))
+                .thenThrow(new BadCredentialsException("user not found"));
+
+        assertThatThrownBy(() -> authService.refresh(refresh))
+                .isInstanceOf(BadCredentialsException.class);
+    }
+
+    /**
+     * Refresh по строке, не являющейся JWT, бросает исключение парсинга
+     */
+    @Test
+    void refreshWithMalformedTokenThrows() {
+        assertThatThrownBy(() -> authService.refresh("not-a-real-jwt"))
+                .isInstanceOf(RuntimeException.class);
     }
 }
