@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.interviewbeaterservice.auth.dto.LoginResponse;
 import com.github.interviewbeaterservice.auth.exception.AuthExceptionHandler;
 import com.github.interviewbeaterservice.auth.exception.BadCredentialsException;
+import com.github.interviewbeaterservice.config.SecurityConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -31,7 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         )
 )
 
-@Import(AuthExceptionHandler.class)
+@Import(SecurityConfig.class)
 class AuthControllerTest {
 
     @Autowired MockMvc mockMvc;
