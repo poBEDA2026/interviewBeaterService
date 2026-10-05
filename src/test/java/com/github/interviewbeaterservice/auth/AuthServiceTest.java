@@ -13,10 +13,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import javax.security.sasl.AuthenticationException;
-import java.lang.reflect.Field;
 import java.time.Duration;
 import java.util.Optional;
 
+import static com.github.interviewbeaterservice.utils.TestConstants.DEFAULT_EMAIL;
+import static com.github.interviewbeaterservice.utils.TestConstants.ROLE_USER;
+import static com.github.interviewbeaterservice.utils.TestUtils.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
@@ -37,56 +39,40 @@ class AuthServiceTest {
 
     AuthService authService;
 
-    private final User alice = withId(
-            User.builder().email("alice@example.com").password("hashed").build(),
+    private final User testUser = withId(
+            User.builder().email(DEFAULT_EMAIL).password("hashed").build(),
             1L, Role.USER
     );
 
     @BeforeEach
     void setUp() {
         authService = new AuthService(userRepository, passwordEncoder, jwtService);
-        alice.setEmail("alice@example.com");
-        alice.setPassword("hashed");
-        setField(alice, "role", Role.USER);
-    }
-
-    private static User withId(User u, Long id, Role role) {
-        setField(u, "id", id);
-        setField(u, "role", role);
-        return u;
-    }
-
-    private static void setField(Object target, String name, Object value) {
-        try {
-            Field f = target.getClass().getDeclaredField(name);
-            f.setAccessible(true);
-            f.set(target, value);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
+        testUser.setEmail(DEFAULT_EMAIL);
+        testUser.setPassword("hashed");
+        setField(testUser, "role", Role.USER);
     }
 
     @Test
     void loginReturnsAccessAndRefreshTokens() {
-        when(userRepository.findByEmail("alice@example.com")).thenReturn(Optional.of(alice));
+        when(userRepository.findByEmail(DEFAULT_EMAIL)).thenReturn(Optional.of(testUser));
         when(passwordEncoder.matches("raw", "hashed")).thenReturn(true);
 
-        LoginResponse resp = authService.login("alice@example.com", "raw");
+        LoginResponse resp = authService.login(DEFAULT_EMAIL, "raw");
 
         assertThat(resp.accessToken()).isNotBlank();
         assertThat(resp.refreshToken()).isNotBlank();
         assertThat(resp.accessToken()).isNotEqualTo(resp.refreshToken());
         assertThat(resp.userId()).isEqualTo(1L);
-        assertThat(resp.email()).isEqualTo("alice@example.com");
-        assertThat(resp.role()).isEqualTo("USER");
+        assertThat(resp.email()).isEqualTo(DEFAULT_EMAIL);
+        assertThat(resp.role()).isEqualTo(ROLE_USER);
     }
 
     @Test
     void loginWithWrongPasswordThrows() {
-        when(userRepository.findByEmail("alice@example.com")).thenReturn(Optional.of(alice));
+        when(userRepository.findByEmail(DEFAULT_EMAIL)).thenReturn(Optional.of(testUser));
         when(passwordEncoder.matches("raw", "hashed")).thenReturn(false);
 
-        assertThatThrownBy(() -> authService.login("alice@example.com", "raw"))
+        assertThatThrownBy(() -> authService.login(DEFAULT_EMAIL, "raw"))
                 .isInstanceOf(BadCredentialsException.class);
     }
 
@@ -101,14 +87,14 @@ class AuthServiceTest {
     @Test
     void refreshWithValidRefreshTokenReturnsNewPair() throws AuthenticationException {
         String refresh = jwtService.issueRefresh(1L);
-        when(userRepository.findById(1L)).thenReturn(Optional.of(alice));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
 
         LoginResponse resp = authService.refresh(refresh);
 
         assertThat(resp.accessToken()).isNotBlank();
         assertThat(resp.refreshToken()).isNotBlank();
         assertThat(resp.userId()).isEqualTo(1L);
-        assertThat(resp.email()).isEqualTo("alice@example.com");
+        assertThat(resp.email()).isEqualTo(DEFAULT_EMAIL);
         // The new access token parses back to the same user and is typed ACCESS
         assertThat(jwtService.parse(resp.accessToken(), TokenType.ACCESS)).isEqualTo(1L);
         assertThat(jwtService.parse(resp.refreshToken(), TokenType.REFRESH)).isEqualTo(1L);
