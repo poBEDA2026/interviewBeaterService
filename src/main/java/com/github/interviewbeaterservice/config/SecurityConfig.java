@@ -7,6 +7,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -15,6 +16,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
+@EnableMethodSecurity
 public class SecurityConfig {
 
     @Bean
@@ -54,16 +56,18 @@ public class SecurityConfig {
                     .authenticationEntryPoint(authEntryPoint)
                     .accessDeniedHandler(accessDeniedHandler))
             .authorizeHttpRequests(auth -> auth
+                    .requestMatchers(HttpMethod.POST, "/auth/login", "/auth/signup", "/auth/refresh").permitAll()
                     .requestMatchers(
                             "/api/swagger-ui.html",
                             "/api/swagger-ui/**",
                             "/api/docs",
                             "/api/docs/**"
                     ).permitAll()
+                    .requestMatchers("/actuator/health").permitAll()
                     .requestMatchers(HttpMethod.GET, "/questions/*/attachments", "/questions/*/attachments/*").permitAll()
                     .requestMatchers(HttpMethod.POST, "/questions/*/attachments").authenticated()
                     .requestMatchers(HttpMethod.DELETE, "/questions/*/attachments/*").authenticated()
-                    .anyRequest().permitAll()
+                    .anyRequest().authenticated()
             );
         return http.build();
     }
