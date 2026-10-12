@@ -8,9 +8,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.test.context.ActiveProfiles;
 
-import javax.security.sasl.AuthenticationException;
 import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -43,7 +44,7 @@ class JwtServiceTest {
         void refreshTokenCannotBeParsedAsAccess() {
             String refresh = jwtService.issueRefresh(42L);
             assertThatThrownBy(() -> jwtService.parse(refresh, TokenType.ACCESS))
-                    .isInstanceOf(AuthenticationException.class);
+                    .isInstanceOf(BadCredentialsException.class);
         }
     }
 
@@ -60,7 +61,7 @@ class JwtServiceTest {
         void accessTokenCannotBeParsedAsRefresh() {
             String access = jwtService.issueAccess(42L);
             assertThatThrownBy(() -> jwtService.parse(access, TokenType.REFRESH))
-                    .isInstanceOf(AuthenticationException.class);
+                    .isInstanceOf(BadCredentialsException.class);
         }
     }
 

@@ -9,8 +9,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
-import javax.security.sasl.AuthenticationException;
-
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
@@ -26,7 +24,7 @@ public class AuthController {
 
     @Operation(summary = "Обновление JWT с помощью рефреш-токена")
     @PostMapping("/refresh")
-    public LoginResponse refresh(@RequestBody @Valid RefreshRequest requestBody) throws AuthenticationException {
+    public LoginResponse refresh(@RequestBody @Valid RefreshRequest requestBody) {
         return authService.refresh(requestBody.refreshToken());
     }
 }

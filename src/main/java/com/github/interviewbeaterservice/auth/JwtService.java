@@ -4,10 +4,10 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
-import javax.security.sasl.AuthenticationException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
@@ -29,7 +29,7 @@ public class JwtService {
         return issue(userId, jwtProperties.refreshTtl(), TokenType.REFRESH);
     }
 
-    public Long parse(String token, TokenType expected) throws AuthenticationException {
+    public Long parse(String token, TokenType expected) throws org.springframework.security.core.AuthenticationException {
         Claims claims = Jwts.parser()
                 .verifyWith(secretKey())
                 .build()
@@ -40,7 +40,7 @@ public class JwtService {
         String expectedType = expected.claim();
 
         if (!expectedType.equals(type)) {
-            throw new AuthenticationException("Token type mismatch: expected " + expectedType + ", got " + type);
+            throw new BadCredentialsException("Token type mismatch: expected " + expectedType + ", got " + type);
         }
 
         return Long.parseLong(claims.getSubject());

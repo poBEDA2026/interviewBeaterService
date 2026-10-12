@@ -2,7 +2,7 @@ package com.github.interviewbeaterservice.auth;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.interviewbeaterservice.auth.dto.LoginResponse;
-import com.github.interviewbeaterservice.auth.exception.BadCredentialsException;
+import com.github.interviewbeaterservice.auth.exception.AuthExceptionHandler;
 import com.github.interviewbeaterservice.config.SecurityConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,10 +11,10 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import javax.security.sasl.AuthenticationException;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.anyString;
@@ -31,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         )
 )
 
-@Import(SecurityConfig.class)
+@Import({ SecurityConfig.class, AuthExceptionHandler.class })
 class AuthControllerTest {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -39,6 +39,7 @@ class AuthControllerTest {
     @Autowired MockMvc mockMvc;
 
     @MockitoBean AuthService authService;
+
     @MockitoBean AppUserDetailsService appUserDetailsService;
 
     @Test
@@ -69,7 +70,7 @@ class AuthControllerTest {
 
     @Test
     void postRefreshWithBadCredentialsReturns401() throws Exception {
-        when(authService.refresh(anyString())).thenThrow(new BadCredentialsException());
+        when(authService.refresh(anyString())).thenThrow(new BadCredentialsException("Smth went wrong"));
 
         mockMvc.perform(post("/auth/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -80,7 +81,7 @@ class AuthControllerTest {
 
     @Test
     void postRefreshWithInvalidTypeReturns401() throws Exception {
-        when(authService.refresh(anyString())).thenThrow(new AuthenticationException("Token type mismatch"));
+        when(authService.refresh(anyString())).thenThrow(new BadCredentialsException("Token type mismatch"));
 
         mockMvc.perform(post("/auth/refresh")
                         .contentType(MediaType.APPLICATION_JSON)

@@ -1,33 +1,36 @@
 package com.github.interviewbeaterservice.auth;
 
 import com.github.interviewbeaterservice.auth.dto.LoginResponse;
-import com.github.interviewbeaterservice.auth.exception.BadCredentialsException;
 import com.github.interviewbeaterservice.user.entity.Role;
 import com.github.interviewbeaterservice.user.entity.User;
-import com.github.interviewbeaterservice.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 
-import javax.security.sasl.AuthenticationException;
 import java.time.Duration;
-import java.util.Optional;
 
 import static com.github.interviewbeaterservice.utils.TestConstants.DEFAULT_EMAIL;
+import static com.github.interviewbeaterservice.utils.TestConstants.PREFIX_ROLE;
 import static com.github.interviewbeaterservice.utils.TestConstants.ROLE_USER;
-import static com.github.interviewbeaterservice.utils.TestUtils.*;
+import static com.github.interviewbeaterservice.utils.TestUtils.setField;
+import static com.github.interviewbeaterservice.utils.TestUtils.withId;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
 
-    @Mock UserRepository userRepository;
-    @Mock PasswordEncoder passwordEncoder;
+    @Mock AuthenticationManager authenticationManager;
+    @Mock AppUserDetailsService appUserDetailsService;
 
     JwtProperties jwtProperties = new JwtProperties(
             "test-secret-test-secret-test-secret-1234",
@@ -46,16 +49,21 @@ class AuthServiceTest {
 
     @BeforeEach
     void setUp() {
-        authService = new AuthService(userRepository, passwordEncoder, jwtService);
+        authService = new AuthService(jwtService, authenticationManager, appUserDetailsService);
         testUser.setEmail(DEFAULT_EMAIL);
         testUser.setPassword("hashed");
         setField(testUser, "role", Role.USER);
     }
 
+    private Authentication authenticatedToken() {
+        return new UsernamePasswordAuthenticationToken(
+                new UserPrincipal(testUser), null, new UserPrincipal(testUser).getAuthorities());
+    }
+
     @Test
     void loginReturnsAccessAndRefreshTokens() {
-        when(userRepository.findByEmail(DEFAULT_EMAIL)).thenReturn(Optional.of(testUser));
-        when(passwordEncoder.matches("raw", "hashed")).thenReturn(true);
+        when(authenticationManager.authenticate(any(Authentication.class)))
+                .thenReturn(authenticatedToken());
 
         LoginResponse resp = authService.login(DEFAULT_EMAIL, "raw");
 
@@ -64,30 +72,22 @@ class AuthServiceTest {
         assertThat(resp.accessToken()).isNotEqualTo(resp.refreshToken());
         assertThat(resp.userId()).isEqualTo(1L);
         assertThat(resp.email()).isEqualTo(DEFAULT_EMAIL);
-        assertThat(resp.role()).isEqualTo(ROLE_USER);
+        assertThat(resp.role()).isEqualTo(PREFIX_ROLE + ROLE_USER);
     }
 
     @Test
-    void loginWithWrongPasswordThrows() {
-        when(userRepository.findByEmail(DEFAULT_EMAIL)).thenReturn(Optional.of(testUser));
-        when(passwordEncoder.matches("raw", "hashed")).thenReturn(false);
+    void loginPropagatesBadCredentialsFromAuthenticationManager() {
+        when(authenticationManager.authenticate(any(Authentication.class)))
+                .thenThrow(new BadCredentialsException("bad creds"));
 
         assertThatThrownBy(() -> authService.login(DEFAULT_EMAIL, "raw"))
                 .isInstanceOf(BadCredentialsException.class);
     }
 
     @Test
-    void loginWithUnknownEmailThrows() {
-        when(userRepository.findByEmail("ghost@example.com")).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> authService.login("ghost@example.com", "raw"))
-                .isInstanceOf(BadCredentialsException.class);
-    }
-
-    @Test
     void refreshWithValidRefreshTokenReturnsNewPair() throws AuthenticationException {
         String refresh = jwtService.issueRefresh(1L);
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(appUserDetailsService.loadUserById(1L)).thenReturn(new UserPrincipal(testUser));
 
         LoginResponse resp = authService.refresh(refresh);
 
@@ -95,17 +95,16 @@ class AuthServiceTest {
         assertThat(resp.refreshToken()).isNotBlank();
         assertThat(resp.userId()).isEqualTo(1L);
         assertThat(resp.email()).isEqualTo(DEFAULT_EMAIL);
-        // The new access token parses back to the same user and is typed ACCESS
         assertThat(jwtService.parse(resp.accessToken(), TokenType.ACCESS)).isEqualTo(1L);
         assertThat(jwtService.parse(resp.refreshToken(), TokenType.REFRESH)).isEqualTo(1L);
     }
 
     @Test
-    void refreshWithAccessTokenThrows() {
+    void refreshWithAccessTokenThrowsBadCredentials() {
         String access = jwtService.issueAccess(1L);
 
         assertThatThrownBy(() -> authService.refresh(access))
-                .isInstanceOf(AuthenticationException.class);
+                .isInstanceOf(BadCredentialsException.class);
     }
 
     @Test
@@ -113,7 +112,7 @@ class AuthServiceTest {
         JwtService shortLived = new JwtService(new JwtProperties(
                 jwtProperties.secret(),
                 jwtProperties.ttl(),
-                java.time.Duration.ofMillis(1)
+                Duration.ofMillis(1)
         ));
         String refresh = shortLived.issueRefresh(1L);
         Thread.sleep(50);
@@ -125,7 +124,8 @@ class AuthServiceTest {
     @Test
     void refreshForUnknownUserThrows() {
         String refresh = jwtService.issueRefresh(99L);
-        when(userRepository.findById(99L)).thenReturn(Optional.empty());
+        when(appUserDetailsService.loadUserById(99L))
+                .thenThrow(new BadCredentialsException("user not found"));
 
         assertThatThrownBy(() -> authService.refresh(refresh))
                 .isInstanceOf(BadCredentialsException.class);

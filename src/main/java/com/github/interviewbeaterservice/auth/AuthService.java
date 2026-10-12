@@ -1,43 +1,38 @@
 package com.github.interviewbeaterservice.auth;
 
 import com.github.interviewbeaterservice.auth.dto.LoginResponse;
-import com.github.interviewbeaterservice.auth.exception.BadCredentialsException;
-import com.github.interviewbeaterservice.user.entity.User;
-import com.github.interviewbeaterservice.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Service;
 
-import javax.security.sasl.AuthenticationException;
 
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final AuthenticationManager authenticationManager;
+    private final AppUserDetailsService appUserDetailsService;
 
     public LoginResponse login(String email, String password) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(BadCredentialsException::new);
+        UserPrincipal user = (UserPrincipal) authenticationManager
+                .authenticate(new UsernamePasswordAuthenticationToken(email, password))
+                .getPrincipal();
 
-        if (!passwordEncoder.matches(password, user.getPassword())) {
-            throw new BadCredentialsException();
-        }
-
-        return toResponse(user, jwtService.issueAccess(user.getId()), jwtService.issueRefresh(user.getId()));
+        Long userId = user.getUserId();
+        return toResponse(user, jwtService.issueAccess(userId), jwtService.issueRefresh(userId));
     }
 
-    public LoginResponse refresh(String refreshToken) throws AuthenticationException {
+    public LoginResponse refresh(String refreshToken) {
         Long userId = jwtService.parse(refreshToken, TokenType.REFRESH);
-        User user = userRepository.findById(userId)
-                .orElseThrow(BadCredentialsException::new);
+        UserPrincipal user = appUserDetailsService.loadUserById(userId);
 
-        return toResponse(user, jwtService.issueAccess(user.getId()), jwtService.issueRefresh(user.getId()));
+        return toResponse(user, jwtService.issueAccess(userId), jwtService.issueRefresh(userId));
     }
 
-    private LoginResponse toResponse(User user, String accessToken, String refreshToken) {
-        return new LoginResponse(accessToken, refreshToken, user.getId(), user.getEmail(), user.getRole().name());
+    private LoginResponse toResponse(UserPrincipal user, String accessToken, String refreshToken) {
+        String userRole = user.getAuthorities().iterator().next().getAuthority();
+        return new LoginResponse(accessToken, refreshToken, user.getUserId(), user.getUsername(), userRole);
     }
 }
