@@ -42,6 +42,12 @@ class AuthControllerTest {
 
     @MockitoBean AppUserDetailsService appUserDetailsService;
 
+    @MockitoBean JwtService jwtService;
+
+    @MockitoBean RestAuthenticationEntryPoint authEntryPoint;
+
+    @MockitoBean RestAccessDeniedHandler accessDeniedHandler;
+
     @Test
     void postRefreshReturnsNewTokens() throws Exception {
         LoginResponse resp = new LoginResponse("access-1", "refresh-1", 7L, "u@x.com", "USER");

@@ -8,18 +8,20 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
-@Component
 @RequiredArgsConstructor
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     public static final String BEARER_PREFIX = "Bearer ";
 
     private final JwtService jwtService;
+    private final AppUserDetailsService appUserDetailsService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -34,16 +36,20 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         String token = header.substring(BEARER_PREFIX.length());
+
         try {
             Long userId = jwtService.parse(token, TokenType.ACCESS);
-            AuthContext.set(userId);
+            UserPrincipal userPrincipal = appUserDetailsService.loadUserById(userId);
+            SecurityContextHolder.getContext().setAuthentication(
+                    new UsernamePasswordAuthenticationToken(userPrincipal, null, userPrincipal.getAuthorities()));
+
             filterChain.doFilter(request, response);
+        } catch (UsernameNotFoundException e) {
+            writeError(response, "User not found");
         } catch (ExpiredJwtException e) {
             writeError(response, "Token expired");
         } catch (SignatureException | MalformedJwtException e) {
             writeError(response, "Invalid token");
-        } finally {
-            AuthContext.clear();
         }
     }
 
