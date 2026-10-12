@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -50,6 +51,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             writeError(response, "Token expired");
         } catch (SignatureException | MalformedJwtException e) {
             writeError(response, "Invalid token");
+        } catch (AuthenticationException e) {
+            writeError(response, "Bad credentials");
         }
     }
 

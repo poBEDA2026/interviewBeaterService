@@ -7,29 +7,26 @@ import com.github.interviewbeaterservice.config.SecurityConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(
-        controllers = AuthController.class,
-        excludeFilters = @ComponentScan.Filter(
-                type = FilterType.ASSIGNABLE_TYPE,
-                classes = JwtAuthFilter.class
-        )
-)
+@WebMvcTest(controllers = AuthController.class)
 
 @Import({ SecurityConfig.class, AuthExceptionHandler.class })
 class AuthControllerTest {
@@ -107,5 +104,23 @@ class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").value("a"))
                 .andExpect(jsonPath("$.refreshToken").value("r"));
+    }
+
+    /**
+     * Sanity-чек: {@code spring-boot-starter-security-test} подключён,
+     * {@code @WithMockUser(roles = "USER")} поднимает {@code SecurityContext}
+     * с пользователем и ролью ROLE_USER. Проверяем это прямо в тесте,
+     * не через web-слой — чтобы было видно, что security-test на classpath
+     * и его аннотации доступны для будущих role-тестов.
+     */
+    @Test
+    @WithMockUser(username = "alice", roles = "USER")
+    void withMockUserIsAvailableAndPopulatesSecurityContext() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        assertNotNull(auth, "SecurityContext должен быть заполнен @WithMockUser");
+        assertEquals("alice", auth.getName());
+        assertTrue(auth.getAuthorities().stream()
+                        .anyMatch(a -> a.getAuthority().equals("ROLE_USER")),
+                "Ожидается authority ROLE_USER");
     }
 }
