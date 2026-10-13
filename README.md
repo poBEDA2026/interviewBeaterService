@@ -18,6 +18,7 @@ interviewBeaterService/
 ```
 
 **Ключевые директории:**
+
 - `ci/` - вся инфраструктура в одном месте (Docker, конфигурации окружений)
 - `src/` - чистый исходный код приложения
 - Корневые файлы - сборка и утилиты
@@ -25,6 +26,7 @@ interviewBeaterService/
 ## 🐳 Docker Quick Start
 
 ### Требования
+
 - Docker Engine 20.10+
 - Docker Compose 2.0+
 
@@ -87,17 +89,21 @@ make clean          # Удалить всё (контейнеры, volumes, об
 ### Варианты сборки
 
 #### 1. Стандартная сборка (multi-stage)
+
 ```bash
 docker-compose -f ci/docker-compose.yml build
 ```
+
 Использует multi-stage build для минимизации размера образа.
 
 #### 2. Сборка для x86_64 на других архитектурах
+
 ```bash
 docker buildx build --platform linux/amd64 -t interviewbeater:latest .
 ```
 
 #### 3. Локальная сборка JAR
+
 ```bash
 make build-local
 ```
@@ -122,7 +128,9 @@ docker stats
 ### Troubleshooting
 
 #### Проблемы с памятью
+
 Если возникают проблемы с памятью, увеличьте лимит Docker:
+
 ```bash
 docker-compose -f ci/docker-compose.yml down
 # Увеличьте memory в ci/docker-compose.yml
@@ -130,6 +138,7 @@ docker-compose -f ci/docker-compose.yml up -d
 ```
 
 #### Пересоздание БД
+
 ```bash
 make down
 docker volume rm interviewbeaterservice_postgres_data
@@ -137,6 +146,7 @@ make up
 ```
 
 #### Проверка здоровья сервисов
+
 ```bash
 curl http://localhost:8080/actuator/health
 docker-compose -f ci/docker-compose.yml exec postgres pg_isready -U interviewbeater
@@ -146,6 +156,7 @@ docker-compose -f ci/docker-compose.yml exec redis redis-cli ping
 ### Продакшн-режим
 
 Для продакшн-использования:
+
 1. Измените пароли в `.env`
 2. Настройте `JWT_SECRET`
 3. Установите правильные `resource limits`
@@ -168,6 +179,7 @@ interviewBeaterService/
 ```
 
 **Ключевые директории:**
+
 - `ci/` - конфигурации для разных окружений (Docker, local, prod)
 - `src/` - исходный код приложения (package-by-feature)
 - Корневые файлы - Docker инфраструктура и сборка
@@ -175,6 +187,7 @@ interviewBeaterService/
 ## 📝 Дополнительная информация
 
 Подробная документация по проекту находится в файле:
+
 - [2026-08-25-interviewbeater-design.md](2026-08-25-interviewbeater-design.md)
 
 ## 🔧 Разработка

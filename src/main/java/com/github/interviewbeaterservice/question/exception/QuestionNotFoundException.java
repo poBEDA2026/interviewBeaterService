@@ -2,7 +2,12 @@ package com.github.interviewbeaterservice.question.exception;
 
 public class QuestionNotFoundException extends RuntimeException {
 
-    public QuestionNotFoundException(Long id) {
-        super("Question " + id + " not found");
-    }
+  /**
+   * Создаёт исключение с сообщением о ненайденном вопросе.
+   *
+   * @param id ID вопроса
+   */
+  public QuestionNotFoundException(Long id) {
+    super("Question " + id + " not found");
+  }
 }

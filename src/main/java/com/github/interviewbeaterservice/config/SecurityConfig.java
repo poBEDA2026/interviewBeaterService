@@ -15,14 +15,30 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+/**
+ * Конфигурация Spring Security: stateless-сессии, разрешение публичных эндпоинтов (Swagger, чтение
+ * вложений) и требование аутентификации для записи/удаления вложений.
+ */
 @Configuration
 public class SecurityConfig {
 
+  /**
+   * Кодировщик паролей на основе BCrypt.
+   *
+   * @return экземпляр {@link BCryptPasswordEncoder}
+   */
   @Bean
   public PasswordEncoder passwordEncoder() {
     return new BCryptPasswordEncoder();
   }
 
+  /**
+   * Сконфигурировать цепочку фильтров безопасности.
+   *
+   * @param http билдер {@link HttpSecurity}
+   * @return сконфигурированная цепочка фильтров
+   * @throws Exception если конфигурация не может быть применена
+   */
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration cfg = new CorsConfiguration();
