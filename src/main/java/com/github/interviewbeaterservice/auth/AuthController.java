@@ -6,8 +6,12 @@ import com.github.interviewbeaterservice.auth.dto.RefreshRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import javax.security.sasl.AuthenticationException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/auth")
@@ -34,10 +38,12 @@ public class AuthController {
    *
    * @param requestBody тело запроса
    * @return обновлённые JWT и рефреш-токен
+   * @throws AuthenticationException
    */
   @Operation(summary = "Обновление JWT с помощью рефреш-токена")
   @PostMapping("/refresh")
-  public LoginResponse refresh(@RequestBody @Valid RefreshRequest requestBody) {
+  public LoginResponse refresh(@RequestBody @Valid RefreshRequest requestBody)
+      throws AuthenticationException {
     return authService.refresh(requestBody.refreshToken());
   }
 }

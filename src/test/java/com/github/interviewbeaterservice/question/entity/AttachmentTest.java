@@ -1,72 +1,59 @@
 package com.github.interviewbeaterservice.question.entity;
 
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.lang.reflect.Method;
 import java.time.Instant;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.Test;
 
 class AttachmentTest {
 
-    /**
-     * Builder заполняет контентные поля; id, uploadedAt и question остаются null.
-     */
-    @Test
-    void builder_setsAllContentFields() {
-        Attachment a = Attachment.builder()
-                .storageKey("questions/1/abc.pdf")
-                .originalName("task.pdf")
-                .contentType("application/pdf")
-                .sizeBytes(12345L)
-                .build();
+  @Test
+  void builder_setsAllContentFields() {
+    Attachment a = Attachment.builder()
+        .storageKey("questions/1/abc.pdf")
+        .originalName("task.pdf")
+        .contentType("application/pdf")
+        .sizeBytes(12345L)
+        .build();
 
-        assertThat(a.getStorageKey()).isEqualTo("questions/1/abc.pdf");
-        assertThat(a.getOriginalName()).isEqualTo("task.pdf");
-        assertThat(a.getContentType()).isEqualTo("application/pdf");
-        assertThat(a.getSizeBytes()).isEqualTo(12345L);
-        assertThat(a.getId()).isNull();
-        assertThat(a.getUploadedAt()).isNull();
-        assertThat(a.getQuestion()).isNull();
-    }
+    assertThat(a.getStorageKey()).isEqualTo("questions/1/abc.pdf");
+    assertThat(a.getOriginalName()).isEqualTo("task.pdf");
+    assertThat(a.getContentType()).isEqualTo("application/pdf");
+    assertThat(a.getSizeBytes()).isEqualTo(12345L);
+    assertThat(a.getId()).isNull();
+    assertThat(a.getUploadedAt()).isNull();
+    assertThat(a.getQuestion()).isNull();
+  }
 
-    /**
-     * onCreate проставляет uploadedAt, если он не задан.
-     */
-    @Test
-    void onCreate_setsUploadedAt() throws Exception {
-        Attachment a = Attachment.builder()
-                .storageKey("k").originalName("n").contentType("text/plain").sizeBytes(1)
-                .build();
+  @Test
+  void onCreate_setsUploadedAt() throws Exception {
+    Attachment a = Attachment.builder()
+        .storageKey("k").originalName("n").contentType("text/plain").sizeBytes(1)
+        .build();
 
-        invokePrivate(a, "onCreate");
+    invokePrivate(a, "onCreate");
 
-        assertThat(a.getUploadedAt()).isNotNull();
-        assertThat(a.getUploadedAt()).isBeforeOrEqualTo(Instant.now());
-    }
+    assertThat(a.getUploadedAt()).isNotNull();
+    assertThat(a.getUploadedAt()).isBeforeOrEqualTo(Instant.now());
+  }
 
-    /**
-     * onCreate не перезаписывает уже заданный uploadedAt.
-     */
-    @Test
-    void onCreate_doesNotOverwriteExistingUploadedAt() throws Exception {
-        Instant pre = Instant.parse("2020-01-01T00:00:00Z");
-        Attachment a = Attachment.builder()
-                .storageKey("k").originalName("n").contentType("text/plain").sizeBytes(1)
-                .build();
-        a.setUploadedAt(pre);
+  @Test
+  void onCreate_doesNotOverwriteExistingUploadedAt() throws Exception {
+    Instant pre = Instant.parse("2020-01-01T00:00:00Z");
+    Attachment a = Attachment.builder()
+        .storageKey("k").originalName("n").contentType("text/plain").sizeBytes(1)
+        .build();
+    a.setUploadedAt(pre);
 
-        invokePrivate(a, "onCreate");
+    invokePrivate(a, "onCreate");
 
-        assertThat(a.getUploadedAt()).isEqualTo(pre);
-    }
+    assertThat(a.getUploadedAt()).isEqualTo(pre);
+  }
 
-    /**
-     * Вызвать приватный метод через рефлексию.
-     */
-    private static void invokePrivate(Object target, String methodName) throws Exception {
-        Method m = target.getClass().getDeclaredMethod(methodName);
-        m.setAccessible(true);
-        m.invoke(target);
-    }
+  private static void invokePrivate(Object target, String methodName) throws Exception {
+    Method m = target.getClass().getDeclaredMethod(methodName);
+    m.setAccessible(true);
+    m.invoke(target);
+  }
 }

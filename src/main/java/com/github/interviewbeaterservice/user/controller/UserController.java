@@ -20,13 +20,13 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Users", description = "Регистрация пользователей")
 public class UserController {
 
-    private final UserService userService;
+  private final UserService userService;
 
-    @Operation(summary = "Регистрация нового пользователя, возвращает id")
-    @PostMapping("/signup")
-    public RegisterResponse signup(@RequestBody @Valid RegisterRequest requestBody) {
-        User createdUser = userService.register(requestBody.email(), requestBody.password());
+  @Operation(summary = "Регистрация нового пользователя, возвращает id")
+  @PostMapping("/signup")
+  public RegisterResponse signup(@RequestBody @Valid RegisterRequest requestBody) {
+    User createdUser = userService.register(requestBody.email(), requestBody.password());
 
-        return new RegisterResponse(createdUser.getId());
-    }
+    return new RegisterResponse(createdUser.getId());
+  }
 }

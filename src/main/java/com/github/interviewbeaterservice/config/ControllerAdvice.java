@@ -1,105 +1,130 @@
 package com.github.interviewbeaterservice.config;
 
+import com.github.interviewbeaterservice.auth.exception.BadCredentialsException;
 import com.github.interviewbeaterservice.question.exception.AttachmentNotFoundException;
 import com.github.interviewbeaterservice.question.exception.InvalidAttachmentException;
 import com.github.interviewbeaterservice.question.exception.QuestionNotFoundException;
+import com.github.interviewbeaterservice.review.exception.InvalidReviewAnswerException;
+import com.github.interviewbeaterservice.review.exception.ReviewAttemptNotFoundException;
+import com.github.interviewbeaterservice.review.exception.ReviewSetNotFoundException;
+import com.github.interviewbeaterservice.review.exception.ReviewSetValidationException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 @RestControllerAdvice
 public class ControllerAdvice {
 
-    /**
-     * Обработка отсутствующего вопроса
-     * @param e исключение {@link QuestionNotFoundException}
-     * @return тело ответа с ошибкой 404
-     */
-    @ExceptionHandler(QuestionNotFoundException.class)
-    public ResponseEntity<Map<String, String>> handleQuestionNotFound(QuestionNotFoundException e) {
-        return body(HttpStatus.NOT_FOUND, e.getMessage());
-    }
+  @ExceptionHandler(QuestionNotFoundException.class)
+  public ResponseEntity<Map<String, String>> handleQuestionNotFound(QuestionNotFoundException e) {
+    return body(HttpStatus.NOT_FOUND, e.getMessage());
+  }
 
-    /**
-     * Обработка отсутствующего вложения
-     * @param e исключение {@link AttachmentNotFoundException}
-     * @return тело ответа с ошибкой 404
-     */
-    @ExceptionHandler(AttachmentNotFoundException.class)
-    public ResponseEntity<Map<String, String>> handleAttachmentNotFound(AttachmentNotFoundException e) {
-        return body(HttpStatus.NOT_FOUND, e.getMessage());
-    }
+  @ExceptionHandler(AttachmentNotFoundException.class)
+  public ResponseEntity<Map<String, String>> handleAttachmentNotFound(
+      AttachmentNotFoundException e) {
+    return body(HttpStatus.NOT_FOUND, e.getMessage());
+  }
 
-    /**
-     * Обработка вложения, не прошедшего валидацию
-     * @param e исключение {@link InvalidAttachmentException}
-     * @return тело ответа с ошибкой 400
-     */
-    @ExceptionHandler(InvalidAttachmentException.class)
-    public ResponseEntity<Map<String, String>> handleInvalidAttachment(InvalidAttachmentException e) {
-        return body(HttpStatus.BAD_REQUEST, e.getMessage());
-    }
+  @ExceptionHandler(InvalidAttachmentException.class)
+  public ResponseEntity<Map<String, String>> handleInvalidAttachment(InvalidAttachmentException e) {
+    return body(HttpStatus.BAD_REQUEST, e.getMessage());
+  }
 
-    /**
-     * Обработка ошибок валидации полей DTO
-     * @param e исключение {@link MethodArgumentNotValidException}
-     * @return тело ответа с ошибкой 400 и списком ошибок по полям
-     */
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException e) {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("error", "Validation failed");
-        body.put("fields", e.getBindingResult().getFieldErrors().stream()
-                .map(fe -> Map.of("field", fe.getField(), "message", fe.getDefaultMessage() == null ? "" : fe.getDefaultMessage()))
-                .toList());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
-    }
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException e) {
+    Map<String, Object> body = new LinkedHashMap<>();
+    body.put("error", "Validation failed");
+    body.put("fields", e.getBindingResult().getFieldErrors().stream()
+        .map(fe -> Map.of("field", fe.getField(), "message",
+            fe.getDefaultMessage() == null ? "" : fe.getDefaultMessage()))
+        .toList());
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+  }
 
-    /**
-     * Обработка превышения лимита размера загрузки
-     * @param e исключение {@link MaxUploadSizeExceededException}
-     * @return тело ответа с ошибкой 413
-     */
-    @ExceptionHandler(MaxUploadSizeExceededException.class)
-    public ResponseEntity<Map<String, String>> handleUploadTooLarge(MaxUploadSizeExceededException e) {
-        return body(HttpStatus.PAYLOAD_TOO_LARGE, "Upload is too large");
-    }
+  @ExceptionHandler(MaxUploadSizeExceededException.class)
+  public ResponseEntity<Map<String, String>> handleUploadTooLarge(
+      MaxUploadSizeExceededException e) {
+    return body(HttpStatus.PAYLOAD_TOO_LARGE, "Upload is too large");
+  }
 
-    /**
-     * Обработка логина с неверными реквизитами
-     * @param e исключение {@link BadCredentialsException}
-     * @return тело ответа с ошибкой 401
-     */
-    @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<Map<String, String>> handleBadCredentials(BadCredentialsException e) {
-        return body(HttpStatus.UNAUTHORIZED, "Invalid email or password");
-    }
+  /**
+   * Обработка логина с неверными реквизитами
+   *
+   * @param e исключение {@link BadCredentialsException}
+   * @return тело ответа с ошибкой 401
+   */
+  @ExceptionHandler(BadCredentialsException.class)
+  public ResponseEntity<Map<String, String>> handleBadCredentials(BadCredentialsException e) {
+    return body(HttpStatus.UNAUTHORIZED, "Invalid email or password");
+  }
 
-    /**
-     * Обработка регистрации пользователя с уже зарегистрированной почтой
-     * @param e исключение {@link DataIntegrityViolationException}
-     * @return тело ответа с ошибкой 409
-     */
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<Map<String, String>> handleDataIntegrity(DataIntegrityViolationException e) {
-        return body(HttpStatus.CONFLICT, "Email already registered");
-    }
+  /**
+   * Обработка регистрации пользователя с уже зарегистрированной почтой
+   *
+   * @param e исключение {@link DataIntegrityViolationException}
+   * @return тело ответа с ошибкой 409
+   */
+  @ExceptionHandler(DataIntegrityViolationException.class)
+  public ResponseEntity<Map<String, String>> handleDataIntegrity(
+      DataIntegrityViolationException e) {
+    return body(HttpStatus.CONFLICT, "Email already registered");
+  }
 
-    /**
-     * Сформировать тело ошибки вида {"error": message}
-     * @param status  HTTP-статус ответа
-     * @param message текст ошибки
-     * @return готовый ответ
-     */
-    private static ResponseEntity<Map<String, String>> body(HttpStatus status, String message) {
-        return ResponseEntity.status(status).body(Map.of("error", message));
-    }
+  /**
+   * Обработка запроса к несуществующей подборке для ревью
+   *
+   * @param e исключение {@link ReviewSetNotFoundException}
+   * @return тело ответа с ошибкой 404
+   */
+  @ExceptionHandler(ReviewSetNotFoundException.class)
+  public ResponseEntity<Map<String, String>> handleReviewSetNotFound(ReviewSetNotFoundException e) {
+    return body(HttpStatus.NOT_FOUND, e.getMessage());
+  }
+
+  /**
+   * Обработка запроса к несуществующей или чужой попытке ревью
+   *
+   * @param e исключение {@link ReviewAttemptNotFoundException}
+   * @return тело ответа с ошибкой 404
+   */
+  @ExceptionHandler(ReviewAttemptNotFoundException.class)
+  public ResponseEntity<Map<String, String>> handleReviewAttemptNotFound(
+      ReviewAttemptNotFoundException e) {
+    return body(HttpStatus.NOT_FOUND, e.getMessage());
+  }
+
+  /**
+   * Обработка сохранения невалидного ответа на вопрос ревью
+   *
+   * @param e исключение {@link InvalidReviewAnswerException}
+   * @return тело ответа с ошибкой 400
+   */
+  @ExceptionHandler(InvalidReviewAnswerException.class)
+  public ResponseEntity<Map<String, String>> handleInvalidReviewAnswer(
+      InvalidReviewAnswerException e) {
+    return body(HttpStatus.BAD_REQUEST, e.getMessage());
+  }
+
+  /**
+   * Обработка валидационных ошибок при создании/редактировании подборки
+   *
+   * @param e исключение {@link ReviewSetValidationException}
+   * @return тело ответа с ошибкой 400
+   */
+  @ExceptionHandler(ReviewSetValidationException.class)
+  public ResponseEntity<Map<String, String>> handleReviewSetValidation(
+      ReviewSetValidationException e) {
+    return body(HttpStatus.BAD_REQUEST, e.getMessage());
+  }
+
+  private static ResponseEntity<Map<String, String>> body(HttpStatus status, String message) {
+    return ResponseEntity.status(status).body(Map.of("error", message));
+  }
 }
