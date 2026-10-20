@@ -1,6 +1,7 @@
 package com.github.interviewbeaterservice.question.controller;
 
 import com.github.interviewbeaterservice.question.entity.Question;
+import com.github.interviewbeaterservice.question.dto.QuestionResponse;
 import com.github.interviewbeaterservice.question.service.QuestionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,7 +36,7 @@ public class QuestionController {
 
     @Operation(summary = "Получение вопроса по ID")
     @GetMapping("/{id}")
-    public Question getById(@PathVariable Long id) {
+    public QuestionResponse getById(@PathVariable Long id) {
         return questionService.getById(id);
     }
 

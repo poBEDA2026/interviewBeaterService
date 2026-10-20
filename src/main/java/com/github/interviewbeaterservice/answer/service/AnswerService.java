@@ -1,13 +1,16 @@
 package com.github.interviewbeaterservice.answer.service;
 
+import com.github.interviewbeaterservice.answer.dto.AnswerResponse;
 import com.github.interviewbeaterservice.answer.dto.AnswerSubmissionResponse;
 import com.github.interviewbeaterservice.answer.entity.Answer;
 import com.github.interviewbeaterservice.answer.repository.AnswerRepository;
+import com.github.interviewbeaterservice.config.CacheConfig;
 import com.github.interviewbeaterservice.question.service.QuestionService;
 import com.github.interviewbeaterservice.statistics.service.StatisticsService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -60,5 +63,22 @@ public class AnswerService {
                 correct.getId(),
                 correct.getText()
         );
+    }
+
+    /**
+ * Ответ по его идентификатору
+ * <p>
+ * Возвращается плоский DTO, а не entity: {@link Answer} тянет за собой ленивую связь
+ * с вопросом, которую нельзя класть в Redis-кэш
+ *
+ * @param answerId ID ответа
+ * @return ответ в виде DTO
+ * @throws EntityNotFoundException если ответ не найден
+ */
+    @Cacheable(cacheNames = CacheConfig.ANSWERS_CACHE, key = "#answerId")
+    public AnswerResponse getById(Long answerId) {
+        return answerRepository.findById(answerId)
+                .map(AnswerResponse::from)
+                .orElseThrow(() -> new EntityNotFoundException("Answer %s not found".formatted(answerId)));
     }
 }
