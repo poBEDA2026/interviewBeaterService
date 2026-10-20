@@ -1,5 +1,6 @@
 package com.github.interviewbeaterservice.answer.controller;
 
+import com.github.interviewbeaterservice.answer.dto.AnswerResponse;
 import com.github.interviewbeaterservice.answer.dto.AnswerOption;
 import com.github.interviewbeaterservice.answer.dto.AnswerSubmissionResponse;
 import com.github.interviewbeaterservice.answer.service.AnswerService;
@@ -55,6 +56,19 @@ public class AnswerController
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required"));
 
         return answerService.submit(userId, questionId, request.answerId());
+    }
+
+    /**
+     * Метод для получения ответа по его идентификатору
+     * @param questionId идентификатор вопроса, которому принадлежит ответ
+     * @param answerId идентификатор ответа
+     * @return ответ типа {@link AnswerResponse}
+     */
+    @Operation(summary = "Получение ответа по ID")
+    @GetMapping("/{answerId}")
+    public AnswerResponse getById(@PathVariable Long questionId, @PathVariable Long answerId)
+    {
+        return answerService.getById(answerId);
     }
 
     public record AnswerSubmissionRequest(Long answerId)
