@@ -1,3 +1,5 @@
 package com.github.interviewbeaterservice.user.dto;
 
-public record RegisterResponse(Long id) {}
+public record RegisterResponse(Long id) {
+
+}

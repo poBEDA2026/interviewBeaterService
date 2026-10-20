@@ -8,7 +8,12 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 @SpringBootApplication
 public class InterviewBeaterServiceApplication {
 
-    public static void main(String[] args) {
-        SpringApplication.run(InterviewBeaterServiceApplication.class, args);
-    }
+  /**
+   * Точка входа Spring Boot приложения.
+   *
+   * @param args аргументы командной строки, передаваемые в SpringApplication
+   */
+  public static void main(String[] args) {
+    SpringApplication.run(InterviewBeaterServiceApplication.class, args);
+  }
 }

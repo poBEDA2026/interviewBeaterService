@@ -17,9 +17,11 @@ ci/
 ## Файлы конфигурации
 
 ### docker-compose.yml
+
 Оркестрация всех сервисов приложения: PostgreSQL, Redis, Spring Boot app.
 
 **Особенности:**
+
 - Multi-service архитектура
 - Health checks для всех сервисов
 - Proper dependency management
@@ -27,6 +29,7 @@ ci/
 - Volume management для персистентности
 
 **Использование:**
+
 ```bash
 # Через Makefile (рекомендуется)
 make up
@@ -40,35 +43,39 @@ docker-compose -f ci/docker-compose.yml logs -f
 ```
 
 ### application-docker.yml
+
 Конфигурация Spring Boot для запуска в Docker контейнерах.
 
 **Особенности:**
+
 - Подключение к Docker сервисам (postgres, redis)
 - Активация health checks
 - Конфигурация логирования для контейнеризованной среды
 - Производительные настройки пулов соединений
 
 **Монтрирование в контейнере:**
+
 ```yaml
 volumes:
   - ./ci/application-docker.yml:/app/config/application-docker.yml:ro
 ```
 
 **Переменные окружения** (переопределяют значения в yml):
+
 - `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`
 - `SPRING_REDIS_HOST`, `SPRING_REDIS_PORT`
-- `JWT_SECRET`, `JWT_EXPIRATION`
+- `JWT_SECRET`, `JWT_TTL`, `JWT_REFRESH_TTL`
 - `JAVA_OPTS`
 
 ## Профили Spring
 
 Приложение поддерживает несколько профилей для разных окружений:
 
-| Профиль | Файл конфигурации | Назначение |
-|--------|-------------------|------------|
-| `docker` | `application-docker.yml` | Docker окружение |
-| `local` | `application-local.yml` | Локальная разработка |
-| `prod` | `application-prod.yml` | Продакшн |
+| Профиль  | Файл конфигурации        | Назначение           |
+|----------|--------------------------|----------------------|
+| `docker` | `application-docker.yml` | Docker окружение     |
+| `local`  | `application-local.yml`  | Локальная разработка |
+| `prod`   | `application-prod.yml`   | Продакшн             |
 
 ## Безопасность
 
