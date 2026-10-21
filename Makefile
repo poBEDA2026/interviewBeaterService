@@ -59,3 +59,7 @@ test:
 # Build locally
 build-local:
 	./mvnw clean package -DskipTests
+
+#Build frontend
+build-front:
+	cd frontend && npm run dev
