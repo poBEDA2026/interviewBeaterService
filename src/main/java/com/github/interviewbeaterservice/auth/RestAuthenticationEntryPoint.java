@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
@@ -12,6 +13,7 @@ import java.io.IOException;
  * Точка входа для неаутентифицированных запросов: отдает 401 с JSON-телом
  * вместо редиректа на страницу логина.
  */
+@Component
 public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
     /**

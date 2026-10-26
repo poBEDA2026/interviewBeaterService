@@ -43,7 +43,7 @@ public class QuestionController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Question create(@RequestBody QuestionRequest request) {
-        return questionService.create(request.title());
+        return questionService.create(request.title(), request.category());
     }
 
     @Operation(summary = "Редактирование заголовка вопроса")
@@ -60,6 +60,6 @@ public class QuestionController {
         return ResponseEntity.noContent().build();
     }
 
-    public record QuestionRequest(String title) {
+    public record QuestionRequest(String title, String category) {
     }
 }

@@ -31,8 +31,8 @@ class AnswerRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        q1 = tem.persistAndFlush(Question.builder().title("Q1").build());
-        q2 = tem.persistAndFlush(Question.builder().title("Q2").build());
+        q1 = tem.persistAndFlush(Question.builder().title("Q1").category("Core Java").build());
+        q2 = tem.persistAndFlush(Question.builder().title("Q2").category("Core Java").build());
     }
 
     private Answer answerFor(Question q, String text, boolean correct) {
@@ -120,7 +120,7 @@ class AnswerRepositoryTest {
     @Test
     @DisplayName("findAllByQuestionId для вопроса без ответов возвращает пустой список")
     void findAllByQuestionId_emptyList_whenNoAnswers() {
-        Question empty = tem.persistAndFlush(Question.builder().title("Empty").build());
+        Question empty = tem.persistAndFlush(Question.builder().title("Empty").category("Core Java").build());
 
         List<Answer> result = answerRepository.findAllByQuestionId(empty.getId());
 
