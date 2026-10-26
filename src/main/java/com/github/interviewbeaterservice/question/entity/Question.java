@@ -17,8 +17,9 @@ import java.util.List;
 public class Question {
 
     @Builder
-    Question(String title) {
+    Question(String title, String category) {
         this.title = title;
+        this.category = category;
 
         Instant now = Instant.now();
         this.createdAt = now;
@@ -32,6 +33,9 @@ public class Question {
 
     @Column(nullable = false, length = 500)
     private String title;
+
+    @Column(nullable = false, length = 50)
+    private String category;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;

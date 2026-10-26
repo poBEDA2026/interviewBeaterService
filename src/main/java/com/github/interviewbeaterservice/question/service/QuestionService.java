@@ -37,12 +37,14 @@ public class QuestionService {
     /**
      * Создание нового вопроса
      * @param title заголовок вопроса
+     * @param category категория вопроса
      * @return новый объект типа {@link Question}
      */
     @Transactional
-    public Question create(String title) {
+    public Question create(String title, String category) {
         Question question = Question.builder()
                 .title(title)
+                .category(category)
                 .build();
 
         return questionRepository.save(question);
