@@ -1,58 +1,67 @@
 package com.github.interviewbeaterservice.auth;
 
 import com.github.interviewbeaterservice.auth.dto.LoginResponse;
+import com.github.interviewbeaterservice.auth.exception.BadCredentialsException;
+import com.github.interviewbeaterservice.user.entity.User;
+import com.github.interviewbeaterservice.user.repository.UserRepository;
+import javax.security.sasl.AuthenticationException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
 
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final JwtService jwtService;
-    private final AuthenticationManager authenticationManager;
-    private final AppUserDetailsService appUserDetailsService;
+  private final UserRepository userRepository;
+  private final PasswordEncoder passwordEncoder;
+  private final JwtService jwtService;
 
-    /**
-     * Войти по email и паролю: аутентификация через {@link AuthenticationManager},
-     * при успехе выпускается новая пара access/refresh-токенов.
-     * @param email email пользователя
-     * @param password пароль в открытом виде
-     * @return ответ с парой токенов и данными пользователя
-     */
-    public LoginResponse login(String email, String password) {
-        UserPrincipal user = (UserPrincipal) authenticationManager
-                .authenticate(new UsernamePasswordAuthenticationToken(email, password))
-                .getPrincipal();
+  /**
+   * Логин пользователя
+   *
+   * @param email    пользовательская почта
+   * @param password пользовательский пароль
+   * @return ответ, содержащий JWT и рефреш-токен {@link LoginResponse}
+   */
+  public LoginResponse login(String email, String password) {
+    User user = userRepository.findByEmail(email)
+        .orElseThrow(BadCredentialsException::new);
 
-        Long userId = user.getUserId();
-        return toResponse(user, jwtService.issueAccess(userId), jwtService.issueRefresh(userId));
+    if (!passwordEncoder.matches(password, user.getPassword())) {
+      throw new BadCredentialsException();
     }
 
-    /**
-     * Выдать новую пару токенов по валидному refresh-токену.
-     * @param refreshToken refresh-токен из запроса
-     * @return ответ с новой парой access/refresh-токенов и данными пользователя
-     */
-    public LoginResponse refresh(String refreshToken) {
-        Long userId = jwtService.parse(refreshToken, TokenType.REFRESH);
-        UserPrincipal user = appUserDetailsService.loadUserById(userId);
+    return toResponse(user, jwtService.issueAccess(user.getId()),
+        jwtService.issueRefresh(user.getId()));
+  }
 
-        return toResponse(user, jwtService.issueAccess(userId), jwtService.issueRefresh(userId));
-    }
+  /**
+   * Обновление пользовательских токенов
+   *
+   * @param refreshToken рефреш-токен
+   * @return ответ, содержащий JWT и рефреш-токен {@link LoginResponse}
+   * @throws AuthenticationException
+   */
+  public LoginResponse refresh(String refreshToken) throws AuthenticationException {
+    Long userId = jwtService.parse(refreshToken, TokenType.REFRESH);
+    User user = userRepository.findById(userId)
+        .orElseThrow(BadCredentialsException::new);
 
-    /**
-     * Собрать ответ логина из принципала и пары токенов;
-     * роль берётся из authority пользователя (ROLE_XXX).
-     * @param user принципал пользователя
-     * @param accessToken access-токен
-     * @param refreshToken refresh-токен
-     * @return готовый ответ
-     */
-    private LoginResponse toResponse(UserPrincipal user, String accessToken, String refreshToken) {
-        String userRole = user.getAuthorities().iterator().next().getAuthority();
-        return new LoginResponse(accessToken, refreshToken, user.getUserId(), user.getUsername(), userRole);
-    }
+    return toResponse(user, jwtService.issueAccess(user.getId()),
+        jwtService.issueRefresh(user.getId()));
+  }
+
+  /**
+   * Маппер для создания объекта {@link LoginResponse}
+   *
+   * @param user         пользователь
+   * @param accessToken  JWT
+   * @param refreshToken рефреш-токен
+   * @return тело ответа {@link LoginResponse}
+   */
+  private LoginResponse toResponse(User user, String accessToken, String refreshToken) {
+    return new LoginResponse(accessToken, refreshToken, user.getId(), user.getEmail(),
+        user.getRole().name());
+  }
 }

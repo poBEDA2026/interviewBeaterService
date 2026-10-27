@@ -9,8 +9,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/__test__")
 public class TestController {
 
-    @GetMapping("/whoami")
-    public String whoami() {
-        return AuthContext.currentUserId().map(String::valueOf).orElse("anonymous");
-    }
+  @GetMapping("/whoami")
+  public String whoami() {
+    return AuthContext.currentUserId().map(String::valueOf).orElse("anonymous");
+  }
 }

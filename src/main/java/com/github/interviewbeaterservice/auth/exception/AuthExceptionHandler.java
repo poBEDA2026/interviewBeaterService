@@ -1,13 +1,11 @@
 package com.github.interviewbeaterservice.auth.exception;
 
+import java.util.Map;
+import javax.security.sasl.AuthenticationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
-import java.util.Map;
 
 @RestControllerAdvice
 public class AuthExceptionHandler {
@@ -31,7 +29,7 @@ public class AuthExceptionHandler {
    * @return ответ для фронта с соответствующим кодом ошибки и сообщением
    */
   @ExceptionHandler(AuthenticationException.class)
-  public ResponseEntity<Map<String, String>> handleAuthentication(AuthenticationException ex) {
+  public ResponseEntity<Map<String, String>> handleIllegalArgument(AuthenticationException ex) {
     return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
         .body(Map.of("error", "Bad credentials"));
   }

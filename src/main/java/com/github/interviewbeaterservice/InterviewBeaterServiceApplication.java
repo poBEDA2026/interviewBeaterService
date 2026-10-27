@@ -8,7 +8,7 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 @SpringBootApplication
 public class InterviewBeaterServiceApplication {
 
-    public static void main(String[] args) {
-        SpringApplication.run(InterviewBeaterServiceApplication.class, args);
-    }
+  public static void main(String[] args) {
+    SpringApplication.run(InterviewBeaterServiceApplication.class, args);
+  }
 }

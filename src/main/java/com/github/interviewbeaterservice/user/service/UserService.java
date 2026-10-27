@@ -12,16 +12,16 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class UserService {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+  private final UserRepository userRepository;
+  private final PasswordEncoder passwordEncoder;
 
-    @Transactional
-    public User register(String email, String rawPassword) {
-        User user = User.builder()
-                .email(email)
-                .password(passwordEncoder.encode(rawPassword))
-                .build();
+  @Transactional
+  public User register(String email, String rawPassword) {
+    User user = User.builder()
+        .email(email)
+        .password(passwordEncoder.encode(rawPassword))
+        .build();
 
-        return userRepository.save(user);
-    }
+    return userRepository.save(user);
+  }
 }
