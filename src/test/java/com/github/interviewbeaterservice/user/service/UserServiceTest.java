@@ -44,7 +44,7 @@ class UserServiceTest {
         when(passwordEncoder.encode("raw-pass")).thenReturn("$2a$10$hashedvalue");
         when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        userService.register("alice@example.com", "raw-pass");
+        userService.register("alice@example.com", "raw-pass", "Алиса Тестовая");
 
         ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
         verify(userRepository).save(captor.capture());
@@ -53,6 +53,7 @@ class UserServiceTest {
         assertThat(saved.getPassword()).isEqualTo("$2a$10$hashedvalue");
         assertThat(saved.getPassword()).startsWith("$2");
         assertThat(saved.getRole()).isEqualTo(Role.USER);
+        assertThat(saved.getFullName()).isEqualTo("Алиса Тестовая");
     }
 
     @Test
@@ -63,7 +64,7 @@ class UserServiceTest {
         setUserId(persisted, 42L);
         when(userRepository.save(any(User.class))).thenReturn(persisted);
 
-        User result = userService.register("alice@example.com", "raw-pass");
+        User result = userService.register("alice@example.com", "raw-pass", null);
 
         assertThat(result.getId()).isEqualTo(42L);
         assertThat(result.getEmail()).isEqualTo("alice@example.com");

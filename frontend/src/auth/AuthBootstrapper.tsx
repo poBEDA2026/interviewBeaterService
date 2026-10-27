@@ -27,7 +27,7 @@ export function AuthBootstrapper({ children }: { children: ReactNode }) {
         }
         useAuthStore.getState().setSession({
           accessToken: session.accessToken,
-          user: { id: session.userId, email: session.email, role: session.role },
+          user: { id: session.userId, email: session.email, fullName: session.fullName, role: session.role },
         });
       })
       .catch(() => {

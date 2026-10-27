@@ -3,6 +3,7 @@ import { create } from 'zustand';
 export interface AuthUser {
   id: number;
   email: string;
+  fullName: string | null;
   role: string;
 }
 

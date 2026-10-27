@@ -16,10 +16,13 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
-    public User register(String email, String rawPassword) {
+    public User register(String email, String rawPassword, String fullName) {
+        String name = fullName == null || fullName.isBlank() ? null : fullName.trim();
+
         User user = User.builder()
                 .email(email)
                 .password(passwordEncoder.encode(rawPassword))
+                .fullName(name)
                 .build();
 
         return userRepository.save(user);

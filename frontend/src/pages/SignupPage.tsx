@@ -7,9 +7,9 @@ import { signup } from '@/api/auth';
 export function SignupPage() {
   const navigate = useNavigate();
 
-  async function onSubmit({ email, password }: { email: string; password: string }): Promise<SubmitResult> {
+  async function onSubmit({ email, password, fullName }: { email: string; password: string; fullName?: string }): Promise<SubmitResult> {
     try {
-      await signup(email, password);
+      await signup(email, password, fullName);
       navigate(`/login?email=${encodeURIComponent(email)}`, { replace: true });
       return { ok: true };
     } catch (e) {

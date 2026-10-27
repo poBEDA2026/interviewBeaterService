@@ -44,7 +44,7 @@ describe('AuthBootstrapper', () => {
     mockedRefreshSession.mockResolvedValue({
       accessToken: 'NEW_ACCESS',
       refreshToken: 'NEW_REFRESH',
-      userId: 1, email: 'a@b.c', role: 'USER',
+      userId: 1, email: 'a@b.c', fullName: 'Alice A', role: 'USER',
     });
     mockedParseExp.mockReturnValue(1234567890);
     const setSession = vi.fn();
@@ -56,7 +56,7 @@ describe('AuthBootstrapper', () => {
     expect(mockedWriteRefresh).toHaveBeenCalledWith('NEW_REFRESH');
     expect(setSession).toHaveBeenCalledWith({
       accessToken: 'NEW_ACCESS',
-      user: { id: 1, email: 'a@b.c', role: 'USER' },
+      user: { id: 1, email: 'a@b.c', fullName: 'Alice A', role: 'USER' },
     });
     expect(mockedSchedule).toHaveBeenCalledWith(1234567890, expect.any(Function));
   });

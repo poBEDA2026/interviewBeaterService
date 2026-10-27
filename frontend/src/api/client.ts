@@ -29,7 +29,7 @@ async function performRefresh(): Promise<LoginResponse | null> {
     useAuthStore.getState().setAccessToken(res.accessToken);
     useAuthStore.getState().setSession({
       accessToken: res.accessToken,
-      user: { id: res.userId, email: res.email, role: res.role },
+      user: { id: res.userId, email: res.email, fullName: res.fullName, role: res.role },
     });
     return res;
   } catch (e) {
@@ -60,7 +60,8 @@ api.interceptors.response.use(
   (r) => r,
   async (error: AxiosError) => {
     const original = error.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined;
-    if (error.response?.status !== 401 || !original || original._retry) {
+    const isRefreshCall = original?.url === '/auth/refresh';
+    if (error.response?.status !== 401 || !original || original._retry || isRefreshCall) {
       return Promise.reject(error);
     }
     original._retry = true;

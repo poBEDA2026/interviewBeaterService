@@ -76,7 +76,7 @@ describe('axios 401 interceptor', () => {
     mockedRefreshSession.mockResolvedValue({
       accessToken: 'NEW_ACCESS',
       refreshToken: 'NEW_REFRESH',
-      userId: 1, email: 'a@b.c', role: 'USER',
+      userId: 1, email: 'a@b.c', fullName: null, role: 'USER',
     });
     const setAccessToken = vi.fn();
     mockedGetState.mockReturnValue({
@@ -141,7 +141,7 @@ describe('axios 401 interceptor', () => {
     mockedRefreshSession.mockResolvedValue({
       accessToken: 'NEW',
       refreshToken: 'NEW_R',
-      userId: 1, email: 'a@b.c', role: 'USER',
+      userId: 1, email: 'a@b.c', fullName: null, role: 'USER',
     });
     mockedGetState.mockReturnValue({
       accessToken: 'OLD', user: null,

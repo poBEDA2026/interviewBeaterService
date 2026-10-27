@@ -25,7 +25,7 @@ public class UserController {
     @Operation(summary = "Регистрация нового пользователя, возвращает id")
     @PostMapping("/signup")
     public RegisterResponse signup(@RequestBody @Valid RegisterRequest requestBody) {
-        User createdUser = userService.register(requestBody.email(), requestBody.password());
+        User createdUser = userService.register(requestBody.email(), requestBody.password(), requestBody.fullName());
 
         return new RegisterResponse(createdUser.getId());
     }

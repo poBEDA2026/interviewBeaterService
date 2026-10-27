@@ -5,6 +5,7 @@ public record LoginResponse(
     String refreshToken,
     Long userId,
     String email,
+    String fullName,
     String role
 ) {
 

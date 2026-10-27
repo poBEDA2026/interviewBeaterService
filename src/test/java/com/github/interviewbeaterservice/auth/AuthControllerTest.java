@@ -55,7 +55,7 @@ class AuthControllerTest {
      */
     @Test
     void postRefreshReturnsNewTokens() throws Exception {
-        LoginResponse resp = new LoginResponse("access-1", "refresh-1", 7L, "u@x.com", "USER");
+        LoginResponse resp = new LoginResponse("access-1", "refresh-1", 7L, "u@x.com", "Ivan Ivanov", "USER");
         when(authService.refresh(anyString())).thenReturn(resp);
 
         String body = objectMapper.writeValueAsString(Map.of("refreshToken", "rt-abc"));
@@ -117,7 +117,7 @@ class AuthControllerTest {
      */
     @Test
     void postLoginReturnsNewShapeWithBothTokens() throws Exception {
-        LoginResponse resp = new LoginResponse("a", "r", 1L, "alice@x.com", "USER");
+        LoginResponse resp = new LoginResponse("a", "r", 1L, "alice@x.com", "Alice Alisson", "USER");
         when(authService.login(anyString(), anyString())).thenReturn(resp);
 
         mockMvc.perform(post("/auth/login")

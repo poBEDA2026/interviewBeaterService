@@ -62,6 +62,7 @@ describe('LoginPage', () => {
       refreshToken: 'r',
       userId: 1,
       email: 'alice@example.com',
+      fullName: 'Alice Alisson',
       role: 'USER',
     });
 
