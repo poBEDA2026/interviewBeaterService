@@ -13,8 +13,8 @@ help:
 	@echo "  make logs           - Show logs from all services"
 	@echo "  make ps             - Show running containers"
 	@echo "  make clean          - Remove all containers, volumes, and images"
-	@echo "  make test           - Run tests (host maven)"
-	@echo "  make build-local    - Build JAR locally (without Docker)"
+	@echo "  make test           - Run tests (Maven in Docker)"
+	@echo "  make build-local    - Build JAR (Maven in Docker, without app image)"
 
 # Build Docker images (uses cached layers when possible — fast on repeat builds)
 build:
@@ -52,13 +52,13 @@ clean:
 	docker system prune -f
 	@echo "All containers, volumes, and unused images removed"
 
-# Run tests on the host (requires local Maven; unit/slice tests don't need DB or S3)
+# Run tests in a one-off container with Maven.
 test:
-	mvn test
+	docker-compose -f ci/docker-compose.yml run --rm tests mvn -B test
 
-# Build locally
+# Build the JAR locally, without Docker.
 build-local:
-	./mvnw clean package -DskipTests
+	docker-compose -f ci/docker-compose.yml run --rm tests mvn -B clean package -Dmaven.test.skip=true
 
 #Build frontend
 build-front:
