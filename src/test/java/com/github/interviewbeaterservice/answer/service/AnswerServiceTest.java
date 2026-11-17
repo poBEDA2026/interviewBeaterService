@@ -3,6 +3,7 @@ package com.github.interviewbeaterservice.answer.service;
 import com.github.interviewbeaterservice.answer.dto.AnswerOption;
 import com.github.interviewbeaterservice.answer.entity.Answer;
 import com.github.interviewbeaterservice.answer.repository.AnswerRepository;
+import com.github.interviewbeaterservice.question.dto.QuestionResponse;
 import com.github.interviewbeaterservice.question.entity.Question;
 import com.github.interviewbeaterservice.question.service.QuestionService;
 import com.github.interviewbeaterservice.statistics.service.StatisticsService;
@@ -67,7 +68,8 @@ class AnswerServiceTest {
         setAnswerId(correct, 10L);
         setAnswerId(wrong, 11L);
 
-        when(questionService.getById(5L)).thenReturn(Question.builder().title("Тест?").build());
+        when(questionService.getById(5L)).thenReturn(
+            QuestionResponse.from(Question.builder().title("Тест?").build()));
         when(answerRepository.findAllByQuestionId(5L)).thenReturn(List.of(correct, wrong));
 
         List<AnswerOption> options = answerService.listOptions(5L);
