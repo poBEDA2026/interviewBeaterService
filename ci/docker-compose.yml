@@ -138,11 +138,26 @@ services:
     networks:
       - interviewbeater-network
 
+  # One-shot сервис для прогона тестов: `make test`.
+  #
+  # Отдельный образ maven — тот же, что в builder-стадии Dockerfile.
+  #
+  # Исходники монтируются из репозитория, поэтому правки в коде видны сразу,
+  # без пересборки образа.
+  tests:
+    image: ${MAVEN_VERSION:-maven:3.9.16-eclipse-temurin-25}
+    container_name: interviewbeater-tests
+    working_dir: /workspace
+    volumes:
+      - ..:/workspace
+      - maven_cache:/root/.m2
+
 # volumes:
 #   postgres_data:
 #     driver: local
 volumes:
   minio_data:
+  maven_cache:
 
 networks:
   interviewbeater-network:
