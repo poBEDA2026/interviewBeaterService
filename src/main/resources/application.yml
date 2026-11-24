@@ -8,6 +8,18 @@ spring:
       enabled: true
     build:
       enabled: true
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: ${REDIS_TIMEOUT:60000}ms
+      lettuce:
+        pool:
+          max-active: ${REDIS_POOL_MAX:8}
+          max-idle: ${REDIS_POOL_MAX_IDLE:8}
+          min-idle: ${REDIS_POOL_MIN_IDLE:2}
+  cache:
+    type: redis
 
 server:
   port: 8080
