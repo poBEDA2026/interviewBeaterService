@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { listQuestions, Question } from '@/api/questions';
 import { LogoutButton } from '@/components/LogoutButton';
+import { QuestionBadges } from '@/components/QuestionBadges';
 import { useAuth } from '@/auth/useAuth';
 
 export function HomePage() {
@@ -38,8 +39,11 @@ export function HomePage() {
       {questions && questions.length > 0 && (
         <ul className="divide-y divide-gray-200 rounded-md border border-gray-200 bg-white">
           {questions.map((q) => (
-            <li key={q.id} className="p-4">
-                <p className="text-sm text-gray-500">#{q.id}</p>
+            <li key={q.id} className="space-y-1.5 p-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-sm text-gray-500">#{q.id}</p>
+                  <QuestionBadges question={q} />
+                </div>
                 <Link to={`/questions/${q.id}`} className="text-gray-900 hover:text-blue-600 hover:underline">
                   {q.title}
                 </Link>

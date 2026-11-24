@@ -1,6 +1,10 @@
 package com.github.interviewbeaterservice.question.service;
 
+import com.github.interviewbeaterservice.question.entity.Category;
+import com.github.interviewbeaterservice.question.entity.Difficulty;
 import com.github.interviewbeaterservice.question.entity.Question;
+import com.github.interviewbeaterservice.question.repository.CategoryRepository;
+import com.github.interviewbeaterservice.question.repository.DifficultyRepository;
 import com.github.interviewbeaterservice.question.repository.QuestionRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +18,8 @@ import java.util.List;
 public class QuestionService {
 
     private final QuestionRepository questionRepository;
+    private final CategoryRepository categoryRepository;
+    private final DifficultyRepository difficultyRepository;
 
     /**
      * Получение вопроса по идентификатору
@@ -37,14 +43,22 @@ public class QuestionService {
     /**
      * Создание нового вопроса
      * @param title заголовок вопроса
-     * @param category категория вопроса
+     * @param category название категории из справочника
+     * @param difficulty название сложности из справочника (junior, middle, middle+, senior)
      * @return новый объект типа {@link Question}
+     * @throws EntityNotFoundException если категории или сложности с таким названием нет в справочнике
      */
     @Transactional
-    public Question create(String title, String category) {
+    public Question create(String title, String category, String difficulty) {
+        Category categoryEntity = categoryRepository.findByName(category)
+                .orElseThrow(() -> new EntityNotFoundException("Category '%s' not found".formatted(category)));
+        Difficulty difficultyEntity = difficultyRepository.findByName(difficulty)
+                .orElseThrow(() -> new EntityNotFoundException("Difficulty '%s' not found".formatted(difficulty)));
+
         Question question = Question.builder()
                 .title(title)
-                .category(category)
+                .category(categoryEntity)
+                .difficulty(difficultyEntity)
                 .build();
 
         return questionRepository.save(question);

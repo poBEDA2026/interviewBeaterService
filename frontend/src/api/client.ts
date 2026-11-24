@@ -60,7 +60,10 @@ api.interceptors.response.use(
   (r) => r,
   async (error: AxiosError) => {
     const original = error.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined;
-    if (error.response?.status !== 401 || !original || original._retry) {
+    // 401 от самого /auth/refresh не рефрешим: иначе refresh ждёт сам себя (deadlock,
+    // приложение навечно висит на "Loading…") — reject сразу, вызывающий код обработает.
+    const isRefreshRequest = !!original?.url?.includes('/auth/refresh');
+    if (error.response?.status !== 401 || !original || original._retry || isRefreshRequest) {
       return Promise.reject(error);
     }
     original._retry = true;
