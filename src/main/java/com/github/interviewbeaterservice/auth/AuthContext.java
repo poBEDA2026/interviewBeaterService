@@ -16,7 +16,7 @@ public final class AuthContext {
         return Optional.ofNullable(CURRENT_USER_ID.get());
     }
 
-    static void clear() {
+    public static void clear() {
         CURRENT_USER_ID.remove();
     }
 }

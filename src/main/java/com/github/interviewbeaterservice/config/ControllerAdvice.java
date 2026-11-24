@@ -3,6 +3,10 @@ package com.github.interviewbeaterservice.config;
 import com.github.interviewbeaterservice.question.exception.AttachmentNotFoundException;
 import com.github.interviewbeaterservice.question.exception.InvalidAttachmentException;
 import com.github.interviewbeaterservice.question.exception.QuestionNotFoundException;
+import com.github.interviewbeaterservice.review.exception.InvalidReviewAnswerException;
+import com.github.interviewbeaterservice.review.exception.ReviewAttemptNotFoundException;
+import com.github.interviewbeaterservice.review.exception.ReviewSetNotFoundException;
+import com.github.interviewbeaterservice.review.exception.ReviewSetValidationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -102,4 +106,51 @@ public class ControllerAdvice {
     private static ResponseEntity<Map<String, String>> body(HttpStatus status, String message) {
         return ResponseEntity.status(status).body(Map.of("error", message));
     }
+
+  /**
+   * Обработка запроса к несуществующей подборке для ревью
+   *
+   * @param e исключение {@link ReviewSetNotFoundException}
+   * @return тело ответа с ошибкой 404
+   */
+  @ExceptionHandler(ReviewSetNotFoundException.class)
+  public ResponseEntity<Map<String, String>> handleReviewSetNotFound(ReviewSetNotFoundException e) {
+    return body(HttpStatus.NOT_FOUND, e.getMessage());
+  }
+
+  /**
+   * Обработка запроса к несуществующей или чужой попытке ревью
+   *
+   * @param e исключение {@link ReviewAttemptNotFoundException}
+   * @return тело ответа с ошибкой 404
+   */
+  @ExceptionHandler(ReviewAttemptNotFoundException.class)
+  public ResponseEntity<Map<String, String>> handleReviewAttemptNotFound(
+      ReviewAttemptNotFoundException e) {
+    return body(HttpStatus.NOT_FOUND, e.getMessage());
+  }
+
+  /**
+   * Обработка сохранения невалидного ответа на вопрос ревью
+   *
+   * @param e исключение {@link InvalidReviewAnswerException}
+   * @return тело ответа с ошибкой 400
+   */
+  @ExceptionHandler(InvalidReviewAnswerException.class)
+  public ResponseEntity<Map<String, String>> handleInvalidReviewAnswer(
+      InvalidReviewAnswerException e) {
+    return body(HttpStatus.BAD_REQUEST, e.getMessage());
+  }
+
+  /**
+   * Обработка валидационных ошибок при создании/редактировании подборки
+   *
+   * @param e исключение {@link ReviewSetValidationException}
+   * @return тело ответа с ошибкой 400
+   */
+  @ExceptionHandler(ReviewSetValidationException.class)
+  public ResponseEntity<Map<String, String>> handleReviewSetValidation(
+      ReviewSetValidationException e) {
+    return body(HttpStatus.BAD_REQUEST, e.getMessage());
+  }
 }
