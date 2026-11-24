@@ -1,5 +1,6 @@
 package com.github.interviewbeaterservice.answer.service;
 
+import com.github.interviewbeaterservice.answer.dto.AnswerOption;
 import com.github.interviewbeaterservice.answer.dto.AnswerSubmissionResponse;
 import com.github.interviewbeaterservice.answer.entity.Answer;
 import com.github.interviewbeaterservice.answer.repository.AnswerRepository;
@@ -10,6 +11,8 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -60,5 +63,20 @@ public class AnswerService {
                 correct.getId(),
                 correct.getText()
         );
+    }
+
+    /**
+     * Получить варианты ответа на вопрос для отображения клиенту.
+     * Отдает только идентификатор и текст: признак правильности остаётся на сервере.
+     *
+     * @param questionId ID вопроса
+     * @return список вариантов ответа
+     */
+    public List<AnswerOption> listOptions(Long questionId) {
+        questionService.getById(questionId);
+
+        return answerRepository.findAllByQuestionId(questionId).stream()
+                .map(a -> new AnswerOption(a.getId(), a.getText()))
+                .toList();
     }
 }

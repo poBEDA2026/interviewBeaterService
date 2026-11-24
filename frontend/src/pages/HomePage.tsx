@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { listQuestions, Question } from '@/api/questions';
 import { LogoutButton } from '@/components/LogoutButton';
 import { useAuth } from '@/auth/useAuth';
@@ -38,9 +39,11 @@ export function HomePage() {
         <ul className="divide-y divide-gray-200 rounded-md border border-gray-200 bg-white">
           {questions.map((q) => (
             <li key={q.id} className="p-4">
-              <p className="text-sm text-gray-500">#{q.id}</p>
-              <p className="text-gray-900">{q.title}</p>
-            </li>
+                <p className="text-sm text-gray-500">#{q.id}</p>
+                <Link to={`/questions/${q.id}`} className="text-gray-900 hover:text-blue-600 hover:underline">
+                  {q.title}
+                </Link>
+              </li>
           ))}
         </ul>
       )}

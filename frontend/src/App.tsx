@@ -4,6 +4,7 @@ import { ProtectedRoute } from '@/auth/ProtectedRoute';
 import { LoginPage } from '@/pages/LoginPage';
 import { SignupPage } from '@/pages/SignupPage';
 import { HomePage } from '@/pages/HomePage';
+import { QuestionPage } from '@/pages/QuestionPage';
 
 export function App() {
   return (
@@ -17,6 +18,14 @@ export function App() {
             element={
               <ProtectedRoute>
                 <HomePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/questions/:id"
+            element={
+              <ProtectedRoute>
+                <QuestionPage />
               </ProtectedRoute>
             }
           />

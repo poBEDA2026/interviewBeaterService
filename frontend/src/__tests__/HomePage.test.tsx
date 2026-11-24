@@ -38,6 +38,23 @@ describe('HomePage', () => {
     expect(screen.getByText('What is TypeScript?')).toBeInTheDocument();
   });
 
+  it('links each question to its answer page', async () => {
+    mockedListQuestions.mockResolvedValueOnce([
+      { id: 1, title: 'What is React?' },
+      { id: 2, title: 'What is TypeScript?' },
+    ]);
+    render(<MemoryRouter><HomePage /></MemoryRouter>);
+    expect(await screen.findByText('What is React?')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /what is react\?/i })).toHaveAttribute(
+      'href',
+      '/questions/1',
+    );
+    expect(screen.getByRole('link', { name: /what is typescript\?/i })).toHaveAttribute(
+      'href',
+      '/questions/2',
+    );
+  });
+
   it('shows error message when listQuestions fails', async () => {
     mockedListQuestions.mockRejectedValueOnce(new Error('boom'));
     render(<MemoryRouter><HomePage /></MemoryRouter>);
