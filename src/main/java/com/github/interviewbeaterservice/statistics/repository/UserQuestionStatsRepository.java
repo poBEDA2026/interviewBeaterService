@@ -14,18 +14,24 @@ import java.util.Optional;
 public interface UserQuestionStatsRepository extends JpaRepository<UserQuestionStats, Long> {
 
     /**
-     * Получить статистику пользователя по конкретному вопросу
+     * Получить статистику пользователя по конкретному вопросу.
+     * question подгружается сразу (join fetch): при open-in-view=false сессия
+     * закрывается на границе сервиса, и ленивый прокси в контроллере ронял запрос.
      * @param userId     ID пользователя
      * @param questionId ID вопроса
      * @return Optional с найденной записью или пустой
      */
+    @Query("select s from UserQuestionStats s join fetch s.question where s.user.id = :userId and s.question.id = :questionId")
     Optional<UserQuestionStats> findByUserIdAndQuestionId(Long userId, Long questionId);
 
     /**
-     * Получить всю статистику пользователя
+     * Получить всю статистику пользователя.
+     * question подгружается сразу (join fetch): при open-in-view=false сессия
+     * закрывается на границе сервиса, и ленивый прокси в контроллере ронял запрос.
      * @param userId ID пользователя
      * @return список записей статистики
      */
+    @Query("select s from UserQuestionStats s join fetch s.question where s.user.id = :userId")
     List<UserQuestionStats> findAllByUserId(Long userId);
 
     /**

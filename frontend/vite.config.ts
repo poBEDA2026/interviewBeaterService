@@ -13,6 +13,8 @@ export default defineConfig({
     proxy: {
       '/auth':    { target: 'http://localhost:8080', changeOrigin: false },
       '/questions': { target: 'http://localhost:8080', changeOrigin: false },
+
+      '/users':    { target: 'http://localhost:8080', changeOrigin: false },
     },
   },
   test: {

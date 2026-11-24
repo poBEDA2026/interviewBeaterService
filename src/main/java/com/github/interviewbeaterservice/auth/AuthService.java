@@ -53,6 +53,6 @@ public class AuthService {
      */
     private LoginResponse toResponse(UserPrincipal user, String accessToken, String refreshToken) {
         String userRole = user.getAuthorities().iterator().next().getAuthority();
-        return new LoginResponse(accessToken, refreshToken, user.getUserId(), user.getUsername(), userRole);
+        return new LoginResponse(accessToken, refreshToken, user.getUserId(), user.getUsername(), user.getFullName(), userRole);
     }
 }

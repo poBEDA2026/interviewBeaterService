@@ -9,6 +9,7 @@ import { Label } from './ui/label';
 const schema = z.object({
   email: z.string().email('Enter a valid email'),
   password: z.string().min(8, 'At least 8 characters'),
+  fullName: z.string().max(255, 'At most 255 characters').optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -33,7 +34,7 @@ export function AuthForm({ mode, defaultEmail = '', onSubmit }: Props) {
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { email: defaultEmail, password: '' },
+    defaultValues: { email: defaultEmail, password: '', fullName: '' },
   });
 
   async function submit(values: FormValues) {
@@ -51,6 +52,13 @@ export function AuthForm({ mode, defaultEmail = '', onSubmit }: Props) {
 
   return (
     <form className="space-y-4" onSubmit={handleSubmit(submit)} noValidate>
+      {mode === 'signup' && (
+        <div className="space-y-1">
+          <Label htmlFor="fullName">Full name</Label>
+          <Input id="fullName" type="text" autoComplete="name" {...register('fullName')} />
+          {errors.fullName && <p className="text-sm text-red-600">{errors.fullName.message}</p>}
+        </div>
+      )}
       <div className="space-y-1">
         <Label htmlFor="email">Email</Label>
         <Input id="email" type="email" autoComplete="email" {...register('email')} />

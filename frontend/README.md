@@ -7,7 +7,7 @@ SPA на React + Vite + TS.
 ```bash
 cd frontend
 npm install
-npm run dev    # http://localhost:5173, проксирует /auth, /questions на :8080
+npm run dev    # http://localhost:5173, проксирует /auth, /questions, /users на :8080
 ```
 
 Бэкенд должен быть запущен на `http://localhost:8080`.

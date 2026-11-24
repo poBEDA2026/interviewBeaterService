@@ -55,4 +55,12 @@ public class UserPrincipal implements UserDetails {
     public Long getUserId() {
         return user.getId();
     }
+
+    /**
+     * Получить ФИО пользователя
+     * @return ФИО или null, если не заполнено
+     */
+    public String getFullName() {
+        return user.getFullName();
+    }
 }

@@ -18,7 +18,7 @@ export function LoginPage() {
     try {
       const res = await login(email, password);
       writeRefresh(res.refreshToken);
-      setSession({ accessToken: res.accessToken, user: { id: res.userId, email: res.email, role: res.role } });
+      setSession({ accessToken: res.accessToken, user: { id: res.userId, email: res.email, fullName: res.fullName, role: res.role } });
       const exp = parseExp(res.accessToken);
       if (exp !== null) {
         scheduleRefresh(exp, () => { /* best-effort: 401 fallback covers it */ });

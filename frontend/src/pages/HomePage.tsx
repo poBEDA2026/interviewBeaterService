@@ -22,7 +22,15 @@ export function HomePage() {
           <h1 className="text-2xl font-semibold text-gray-900">Questions</h1>
           {user && <p className="text-sm text-gray-500">Signed in as {user.email}</p>}
         </div>
-        <LogoutButton />
+        <div className="flex items-center gap-2">
+          <Link
+            to="/account"
+            className="inline-flex h-10 items-center rounded-md border border-gray-300 bg-white px-4 text-sm font-medium text-gray-900 transition-colors hover:bg-gray-50"
+          >
+            Account
+          </Link>
+          <LogoutButton />
+        </div>
       </div>
 
       {error && <p className="text-sm text-red-600" role="alert">{error}</p>}

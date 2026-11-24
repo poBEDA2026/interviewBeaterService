@@ -27,7 +27,22 @@ describe('AuthForm', () => {
     await user.type(screen.getByLabelText(/password/i), 'password123');
     await user.click(screen.getByRole('button', { name: /continue/i }));
 
-    expect(onSubmit).toHaveBeenCalledWith({ email: 'alice@example.com', password: 'password123' });
+    expect(onSubmit).toHaveBeenCalledWith({ email: 'alice@example.com', password: 'password123', fullName: '' });
+  });
+
+  it('signup mode renders Full name field and passes it through', async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn().mockResolvedValue({ ok: true });
+    render(<AuthForm mode="signup" onSubmit={onSubmit} />);
+    await user.type(screen.getByLabelText(/full name/i), 'Alice Alisson');
+    await user.type(screen.getByLabelText(/email/i), 'alice@example.com');
+    await user.type(screen.getByLabelText(/password/i), 'password123');
+    await user.click(screen.getByRole('button', { name: /continue/i }));
+    expect(onSubmit).toHaveBeenCalledWith({
+      email: 'alice@example.com',
+      password: 'password123',
+      fullName: 'Alice Alisson',
+    });
   });
 
   it('maps server fieldErrors onto fields', async () => {

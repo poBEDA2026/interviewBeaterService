@@ -4,6 +4,8 @@ import { ProtectedRoute } from '@/auth/ProtectedRoute';
 import { LoginPage } from '@/pages/LoginPage';
 import { SignupPage } from '@/pages/SignupPage';
 import { HomePage } from '@/pages/HomePage';
+import { AccountPage } from '@/pages/AccountPage';
+import { StatisticsPage } from '@/pages/StatisticsPage';
 import { QuestionPage } from '@/pages/QuestionPage';
 
 export function App() {
@@ -14,6 +16,24 @@ export function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <HomePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/account" element={<ProtectedRoute><AccountPage /></ProtectedRoute>} />
+<Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <HomePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/account/stats" element={<ProtectedRoute><StatisticsPage /></ProtectedRoute>} />
+<Route
             path="/"
             element={
               <ProtectedRoute>

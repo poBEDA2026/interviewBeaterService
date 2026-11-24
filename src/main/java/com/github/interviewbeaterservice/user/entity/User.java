@@ -15,9 +15,10 @@ import java.time.Instant;
 public class User {
 
     @Builder
-    User(String email, String password) {
+    User(String email, String password, String fullName) {
         this.email = email;
         this.password = password;
+        this.fullName = fullName;
         this.role = Role.USER;
     }
 
@@ -31,6 +32,9 @@ public class User {
 
     @Column(name = "password_hash", nullable = false, length = 255)
     private String password;
+
+    @Column(name = "full_name", length = 255)
+    private String fullName;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)

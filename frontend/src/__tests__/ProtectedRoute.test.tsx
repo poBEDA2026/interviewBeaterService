@@ -36,7 +36,7 @@ describe('ProtectedRoute', () => {
     mockedUseAuth.mockReturnValue({
       isAuthenticated: true,
       accessToken: 'A',
-      user: { id: 1, email: 'a@b.c', role: 'USER' },
+      user: { id: 1, email: 'a@b.c', fullName: null, role: 'USER' },
       setSession: vi.fn(),
       setAccessToken: vi.fn(),
       clear: vi.fn(),
