@@ -1,8 +1,21 @@
 import { api } from './client';
 
+export interface Category {
+  id: number;
+  name: string;
+}
+
+export interface Difficulty {
+  id: number;
+  name: string;
+  level: number;
+}
+
 export interface Question {
   id: number;
   title: string;
+  category: Category;
+  difficulty: Difficulty;
 }
 
 export interface AnswerOption {

@@ -10,6 +10,7 @@ import {
   submitAnswer,
 } from '@/api/questions';
 import { Button } from '@/components/ui/button';
+import { QuestionBadges } from '@/components/QuestionBadges';
 import { cn } from '@/lib/utils';
 
 export function QuestionPage() {
@@ -93,6 +94,10 @@ export function QuestionPage() {
 
       {question && (
         <>
+          <div className="mb-4">
+            <QuestionBadges question={question} />
+          </div>
+
           <h1 className="mb-6 text-2xl font-semibold text-gray-900">{question.title}</h1>
 
           {options && options.length === 0 && (

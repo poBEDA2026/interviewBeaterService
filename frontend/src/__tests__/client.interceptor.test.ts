@@ -1,3 +1,14 @@
+/**
+ * Тесты axios-интерцептора из api/client.ts: attach заголовка Authorization,
+ * refresh-и-retry при 401, очистка сессии при неудачном refresh, защита от
+ * дедлока при 401 от самого /auth/refresh и шаринг одного refresh-вызова
+ * на параллельные 401.
+ *
+ * Инфраструктура: замоканы auth/store, refreshScheduler и api/auth; реальный
+ * HTTP заменён подменой api.defaults.adapter; ошибки 401 фабрикуются через
+ * makeAxiosError (с isAxiosError и config — axios v1 иначе оборачивает
+ * отклонённые adapter'ом ошибки и теряет вручную проставленный .response).
+ */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock store + scheduler + api/auth до импорта client
@@ -55,6 +66,7 @@ beforeEach(() => {
 });
 
 describe('axios 401 interceptor', () => {
+  // Access-токен из стора попадает в заголовок Authorization каждого запроса.
   it('attaches Authorization header when accessToken present', async () => {
     mockedGetState.mockReturnValue({
       accessToken: 'ACCESS',
@@ -71,6 +83,8 @@ describe('axios 401 interceptor', () => {
     expect(adapter.mock.calls[0][0].headers.Authorization).toBe('Bearer ACCESS');
   });
 
+  // 401 → refresh по refreshToken → запись новых токенов → retry исходного
+  // запроса (adapter вызван дважды: исходный + повторный).
   it('on 401 refreshes and retries original request', async () => {
     mockedReadRefresh.mockReturnValue('REFRESH');
     mockedRefreshSession.mockResolvedValue({
@@ -105,6 +119,8 @@ describe('axios 401 interceptor', () => {
     expect(adapter).toHaveBeenCalledTimes(2); // retry произошёл
   });
 
+  // Неудачный refresh: сессия и refresh-токен очищаются, исходный запрос
+  // отклоняется. location подменяется прокси — jsdom не даёт подменить assign.
   it('on refresh failure clears state and rejects', async () => {
     mockedReadRefresh.mockReturnValue('REFRESH');
     mockedRefreshSession.mockRejectedValue(new Error('refresh exploded'));
@@ -136,6 +152,34 @@ describe('axios 401 interceptor', () => {
     Object.defineProperty(window, 'location', { configurable: true, value: origLocation });
   });
 
+  it('401 on /auth/refresh itself rejects immediately instead of deadlocking', async () => {
+    // Реальный refreshSession ходит через api-инстанс (см. api/auth.ts), поэтому
+    // 401 от самого /auth/refresh попадает в интерцептор повторно. Воспроизводим это:
+    // без защиты интерцептор ждёт refreshInFlight, который ждёт этот же запрос — вечный deadlock
+    // (симптом: AuthBootstrapper навечно показывает "Loading…").
+    vi.resetModules();
+    const { api: freshApi } = await import('@/api/client');
+    mockedReadRefresh.mockReturnValue('REFRESH');
+    mockedRefreshSession.mockImplementation(async (token: string) => {
+      const { data } = await freshApi.post('/auth/refresh', { refreshToken: token });
+      return data;
+    });
+
+    const adapter = vi.fn().mockImplementation((config) =>
+      Promise.reject(makeAxiosError(401, config)));
+    (freshApi.defaults.adapter as unknown) = adapter;
+
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('deadlock: promise never settled')), 500));
+    await expect(
+      Promise.race([freshApi.post('/auth/refresh', { refreshToken: 'REFRESH' }), timeout]),
+    ).rejects.toThrow();
+    // запрос отклонён сразу, без порождения повторных refresh-запросов
+    expect(adapter).toHaveBeenCalledTimes(1);
+  });
+
+  // Параллельные 401 шарят один refresh-вызов; оба запроса ретрайнятся
+  // (2 исходных + 2 повторных вызова adapter).
   it('concurrent 401s share one refresh call', async () => {
     mockedReadRefresh.mockReturnValue('REFRESH');
     mockedRefreshSession.mockResolvedValue({

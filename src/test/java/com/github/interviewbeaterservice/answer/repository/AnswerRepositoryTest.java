@@ -1,6 +1,8 @@
 package com.github.interviewbeaterservice.answer.repository;
 
 import com.github.interviewbeaterservice.answer.entity.Answer;
+import com.github.interviewbeaterservice.question.entity.Category;
+import com.github.interviewbeaterservice.question.entity.Difficulty;
 import com.github.interviewbeaterservice.question.entity.Question;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -31,8 +33,11 @@ class AnswerRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        q1 = tem.persistAndFlush(Question.builder().title("Q1").category("Core Java").build());
-        q2 = tem.persistAndFlush(Question.builder().title("Q2").category("Core Java").build());
+        Category category = tem.persistAndFlush(Category.builder().name("Core Java").build());
+        Difficulty difficulty = tem.persistAndFlush(Difficulty.builder().name("middle").level(2).build());
+
+        q1 = tem.persistAndFlush(Question.builder().title("Q1").category(category).difficulty(difficulty).build());
+        q2 = tem.persistAndFlush(Question.builder().title("Q2").category(category).difficulty(difficulty).build());
     }
 
     private Answer answerFor(Question q, String text, boolean correct) {
@@ -120,10 +125,28 @@ class AnswerRepositoryTest {
     @Test
     @DisplayName("findAllByQuestionId для вопроса без ответов возвращает пустой список")
     void findAllByQuestionId_emptyList_whenNoAnswers() {
-        Question empty = tem.persistAndFlush(Question.builder().title("Empty").category("Core Java").build());
+        Category category = tem.persistAndFlush(Category.builder().name("Spring").build());
+        Difficulty difficulty = tem.persistAndFlush(Difficulty.builder().name("junior").level(1).build());
+        Question empty = tem.persistAndFlush(Question.builder().title("Empty").category(category).difficulty(difficulty).build());
 
         List<Answer> result = answerRepository.findAllByQuestionId(empty.getId());
 
         assertThat(result).isNotNull().isEmpty();
+    }
+
+    @Test
+    @DisplayName("save сохраняет Question со ссылками на справочники категории и сложности")
+    void save_persistsQuestionWithCategoryAndDifficultyReferences() {
+        Category category = tem.persistAndFlush(Category.builder().name("JVM").build());
+        Difficulty difficulty = tem.persistAndFlush(Difficulty.builder().name("senior").level(4).build());
+        Question saved = tem.persistAndFlush(
+                Question.builder().title("GC Roots?").category(category).difficulty(difficulty).build());
+
+        tem.clear();
+
+        Question loaded = tem.find(Question.class, saved.getId());
+        assertThat(loaded.getCategory().getName()).isEqualTo("JVM");
+        assertThat(loaded.getDifficulty().getName()).isEqualTo("senior");
+        assertThat(loaded.getDifficulty().getLevel()).isEqualTo(4);
     }
 }

@@ -17,9 +17,10 @@ import java.util.List;
 public class Question {
 
     @Builder
-    Question(String title, String category) {
+    Question(String title, Category category, Difficulty difficulty) {
         this.title = title;
         this.category = category;
+        this.difficulty = difficulty;
 
         Instant now = Instant.now();
         this.createdAt = now;
@@ -34,8 +35,13 @@ public class Question {
     @Column(nullable = false, length = 500)
     private String title;
 
-    @Column(nullable = false, length = 50)
-    private String category;
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @JoinColumn(name = "category_id", nullable = false)
+    private Category category;
+
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @JoinColumn(name = "difficulty_id", nullable = false)
+    private Difficulty difficulty;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
